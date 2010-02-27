@@ -13,25 +13,22 @@
 ;; Keywords: xml rpc network
 ;; URL: http://emacswiki.org/emacs/xml-rpc.el
 ;; Maintained-at: http://savannah.nongnu.org/bzr/?group=emacsweblogs
-;; Last Modified: <2009-09-16 11:17:07 mah>
+;; Last Modified: <2009-12-07 17:21:47 mah>
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
-;; This is free software; you can redistribute it and/or modify it
-;; under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
-;; This software is distributed in the hope that it will be useful,
+;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
-
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -46,8 +43,17 @@
 ;; parameters and return values, making using XML-RPC methods fairly
 ;; transparent to the lisp code.
 
-;; Requirements
-;; ------------
+;;; Installation:
+
+;; If you use ELPA (http://tromey.com/elpa), you can install via the
+;; M-x package-list-packages interface. This is preferrable as you
+;; will have access to updates automatically.
+
+;; Otherwise, just make sure this file in your load-path (usually
+;; ~/.emacs.d is included) and put (require 'xml-rpc) in your
+;; ~/.emacs or ~/.emacs.d/init.el file.
+
+;;; Requirements
 
 ;; xml-rpc.el uses the url package for http handling and xml.el for
 ;; XML parsing. url is a part of the W3 browser package.  The url
@@ -57,8 +63,7 @@
 ;; here: <URL:ftp://ftp.codefactory.se/pub/people/daniel/elisp/xml.el>
 
 
-;; XML-RPC datatypes are represented as follows
-;; --------------------------------------------
+;;; XML-RPC datatypes are represented as follows
 
 ;;          int:  42
 ;; float/double:  42.0
@@ -68,8 +73,8 @@
 ;;    dateTime:   (:datetime (1234 124))
 
 
-;; Examples
-;; ========
+;;; Examples
+
 ;; Here follows some examples demonstrating the use of xml-rpc.el
 
 ;; Normal synchronous operation
