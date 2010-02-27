@@ -8,12 +8,15 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.7
+;; Version: 1.6.8
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://emacswiki.org/emacs/xml-rpc.el
 ;; Maintained-at: http://savannah.nongnu.org/bzr/?group=emacsweblogs
-;; Last Modified: <2009-12-07 17:21:47 mah>
+;; Last Modified: <2010-01-11 20:19:23 mah>
+
+(defconst xml-rpc-version "1.6.8"
+  "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
@@ -119,7 +122,9 @@
 
 ;;; History:
 
-;; 1.6.7   - Add a report-xml-rpc-bug function
+;; 1.6.8   - Add a report-xml-rpc-bug function
+
+;; 1.6.7   - Skipped version
 
 ;; 1.6.6   - Use the correct dateTime elements.  Fix bug in parsing null int.
 
@@ -179,9 +184,6 @@
 (require 'timezone)
 (eval-when-compile
   (require 'cl))
-
-(defconst xml-rpc-version "1.6.7"
-  "Current Version of xml-rpc.el")
 
 (defconst xml-rpc-maintainer-address "mah@everybody.org"
   "The address where bug reports should be sent.")
@@ -535,7 +537,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 		     (setq url-be-asynchronous t
 			   url-current-callback-data (list
 						      async-callback-function
-						      (current-buffer))	
+						      (current-buffer))
 			   url-current-callback-func
                            'xml-rpc-request-callback-handler)
 		   (setq url-be-asynchronous nil))
@@ -544,7 +546,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 		 (when (not url-be-asynchronous)
 		   (let ((result (xml-rpc-request-process-buffer
 				  (current-buffer))))
-		     (when (> xml-rpc-debug 1) 
+		     (when (> xml-rpc-debug 1)
                        (with-current-buffer (create-file-buffer "result-data")
                          (insert result)))
 		     result)))
@@ -624,7 +626,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 			((looking-at "<\\?xml ")
 			 (xml-rpc-clean (xml-parse-region (point-min)
                                                           (point-max))))
-			  
+
 			;; No HTTP status returned
 			((not status)
 			 (let ((errstart
@@ -652,7 +654,7 @@ handled from XML-BUFFER."
     (when (< xml-rpc-debug 1)
       (kill-buffer xml-buffer))
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
-  
+
 
 (defun xml-rpc-method-call-async (async-callback-func server-url method
 						      &rest params)
