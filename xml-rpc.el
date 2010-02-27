@@ -12,7 +12,7 @@
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://emacswiki.org/emacs/xml-rpc.el
-;; Last Modified: <2009-08-04 14:01:05 mah>
+;; Last Modified: <2009-08-12 19:20:27 mah>
 ;; Package-Requires: url
 
 ;; This file is NOT (yet) part of GNU Emacs.
