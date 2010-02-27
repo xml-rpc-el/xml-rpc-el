@@ -233,7 +233,7 @@ interpreting and simplifying it while retaining its structure."
     (cond
      ;; Base64
      ((eq valtype 'base64)
-      (rfc2047-decode "utf-8" ?B valvalue))
+      (rfc2047-decode "utf-8" "B" valvalue))
      ;; Boolean
      ((eq valtype 'boolean)
       (xml-rpc-string-to-boolean valvalue))
