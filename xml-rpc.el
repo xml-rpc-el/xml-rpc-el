@@ -1,15 +1,18 @@
-;;; xml-rpc.el -- An elisp implementation of clientside XML-RPC
+;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC
 
 ;; Copyright (C) 2001 CodeFactory AB.
 ;; Copyright (C) 2001 Daniel Lundin.
 ;; Parts Copyright (C) 2002-2005 Mark A. Hershberger
 
+;; Copyright (C) 2006 Shun-ichi Goto
+;;   Modified for non-ASCII character handling.
+
 ;; Author: Daniel Lundin <daniel@codefactory.se>
 ;; Maintainer: Mark A. Hershberger <mah@everybody.org>
-;; Version: 1.6.4
+;; Version: 1.6.4.1
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
-;; URL: http://elisp.info/package/xml-rpc/
+;; URL: http://emacswiki.org/emacs/xml-rpc.el
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
@@ -45,9 +48,10 @@
 ;; Requirements
 ;; ------------
 
-;; xml-rpc.el uses the url package for http handling and xml.el for XML
-;; parsing. url is a part of the W3 browser package (but now as a separate
-;; module in the CVS repository).
+;; xml-rpc.el uses the url package for http handling and xml.el for
+;; XML parsing. url is a part of the W3 browser package.  The url
+;; package that is part of Emacs 22+ works great.
+;;
 ;; xml.el is a part of GNU Emacs 21, but can also be downloaded from
 ;; here: <URL:ftp://ftp.codefactory.se/pub/people/daniel/elisp/xml.el>
 
@@ -108,6 +112,17 @@
 
 ;;; History:
 
+;; 1.6.4.1 - Updated to work with both Emacs22 and Emacs23.
+
+;; 1.6.2.2 - Modified to allow non-ASCII string again.
+;;           It can handle non-ASCII page name and comment
+;;           on Emacs 21 also.
+
+;; 1.6.2.1 - Modified to allow non-ASCII string.
+;;           If xml-rpc-allow-unicode-string is non-nil,
+;;           make 'value' object instead of 'base64' object.
+;;           This is good for WikiRPC.
+
 ;; 1.6.2 - Fix whitespace issues to work better with new xml.el
 ;;         Fix bug in string handling.
 ;;         Add support for gzip-encoding when needed.
@@ -158,6 +173,12 @@
 (defcustom xml-rpc-load-hook nil
   "*Hook run after loading xml-rpc."
   :type 'hook :group 'xml-rpc)
+
+(defcustom xml-rpc-allow-unicode-string t
+  "If non-nil, non-ASCII data is composed as 'value' instead of 'base64'.
+And this option overrides `xml-rpc-base64-encode-unicode' and
+`xml-rpc-base64-decode-unicode' if set as non-nil."
+  :type 'boolean :group 'xml-rpc)
 
 (defcustom xml-rpc-base64-encode-unicode t
   "If non-nil, then strings with non-ascii characters will be turned
@@ -313,10 +334,11 @@ functions in xml.el."
     `((value nil (int nil ,(int-to-string value)))))
    ((xml-rpc-value-stringp value)
     (let ((charset-list (find-charset-string value)))
-      (if (or (and (eq 1 (length charset-list))
+      (if (or xml-rpc-allow-unicode-string
+	      (and (eq 1 (length charset-list))
 		   (eq 'ascii (car charset-list)))
 	      (not xml-rpc-base64-encode-unicode))
-	  `((value nil (string nil ,(url-insert-entities-in-string value))))
+	  `((value nil (string nil ,value)))
 	`((value nil (base64 nil ,(base64-encode-string
 				   (encode-coding-string value 'utf-8))))))))
    ((xml-rpc-value-doublep value)
@@ -417,22 +439,25 @@ It returns an XML list containing the method response from the XML-RPC server,
 or nil if called with ASYNC-CALLBACK-FUNCTION."
   (unwind-protect
       (save-excursion
-	(let ((url-working-buffer (get-buffer-create
-				   (xml-rpc-get-temp-buffer-name)))
-	      (url-request-method "POST")
+	(let ((url-request-method "POST")
 	      (url-package-name "xml-rpc.el")
 	      (url-package-version xml-rpc-version)
 	      (url-request-data (concat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 					(with-temp-buffer
 					  (xml-print xml)
-					  (buffer-string))))
+					  (when xml-rpc-allow-unicode-string
+					    (encode-coding-region
+					     (point-min) (point-max) 'utf-8))
+					  (buffer-string))
+					"\n"))
+	      (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
 	      (url-request-coding-system 'utf-8)
-	      (url-http-attempt-keepalives nil)
+	      (url-http-attempt-keepalives t)
 	      (url-request-extra-headers (list 
+                                          (cons "Connection" "keep-alive")
 					  (cons "Content-Type" "text/xml; charset=utf-8"))))
 	  (if (> xml-rpc-debug 1)
 	      (print url-request-data (create-file-buffer "request-data")))
-	  (set-buffer url-working-buffer)
 
 	  (cond ((boundp 'url-be-asynchronous) ; Sniff for w3 lib capability
 		 (if async-callback-function
@@ -452,24 +477,22 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 			 (save-excursion
 			   (set-buffer (create-file-buffer "result-data"))
 			   (insert result)))
-		     (if (< xml-rpc-debug 1)
-			 (kill-buffer (current-buffer)))
 		     result)))
 		(t			; Post emacs20 w3-el
 		 (if async-callback-function
 		     (url-retrieve server-url async-callback-function)
 		   (let ((buffer (url-retrieve-synchronously server-url))
 			 result)
-		     (set-buffer buffer)
-		     (url-http-parse-headers)
-		     (if (> url-http-response-status 299)
-			 (error "Error during request: %s"
-				url-http-response-status))
-		     (url-extract-mime-headers)
-		     (setq result (xml-rpc-request-process-buffer buffer))
-		     (if (< xml-rpc-debug 1)
-			 (kill-buffer buffer))
-		     result))))))))
+		     (with-current-buffer buffer
+		       (if (not (numberp url-http-response-status))
+			   ;; this error may occur when keep-alive bug
+			   ;; of url-http.el is not cleared.
+			   (error "Why? url-http-response-status is %s"
+				  url-http-response-status))
+		       (if (> url-http-response-status 299)
+			   (error "Error during request: %s"
+				  url-http-response-status)))
+		     (xml-rpc-request-process-buffer buffer)))))))))
 
 
 (defun xml-rpc-clean (l)
@@ -487,6 +510,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 					; a string, so clean it.
 	 ((stringp elem)
 	  (let ((tmp (xml-rpc-clean-string elem)))
+	    (if (and tmp xml-rpc-allow-unicode-string)
+		(setq tmp (decode-coding-string tmp 'utf-8)))
 	    (if tmp
 		(setq result (append result (list tmp)))
 	      result)))
@@ -580,50 +605,64 @@ parameters."
 	   (xml-rpc-xml-to-response response)))))
 
 (eval-when-compile
-  (unless (fboundp 'xml-print)
+  (unless (fboundp 'xml-escape-string)
     (defun xml-debug-print (xml &optional indent-string)
       "Outputs the XML in the current buffer.
 XML can be a tree or a list of nodes.
 The first line is indented with the optional INDENT-STRING."
       (setq indent-string (or indent-string ""))
       (dolist (node xml)
-	(xml-debug-print-internal node indent-string)))
+        (xml-debug-print-internal node indent-string)))
 
     (defalias 'xml-print 'xml-debug-print)
+
+    (defun xml-escape-string (string)
+      "Return the string with entity substitutions made from
+xml-entity-alist."
+      (mapconcat (lambda (byte)
+                   (let ((char (char-to-string byte)))
+                     (if (rassoc char xml-entity-alist)
+                         (concat "&" (car (rassoc char xml-entity-alist)) ";")
+                       char)))
+                 ;; This differs from the non-unicode branch.  Just
+                 ;; grabbing the string works here.
+                 string ""))
 
     (defun xml-debug-print-internal (xml indent-string)
       "Outputs the XML tree in the current buffer.
 The first line is indented with INDENT-STRING."
       (let ((tree xml)
-	    attlist)
-	(insert indent-string ?< (symbol-name (xml-node-name tree)))
+            attlist)
+        (insert indent-string ?< (symbol-name (xml-node-name tree)))
 
-	;;  output the attribute list
-	(setq attlist (xml-node-attributes tree))
-	(while attlist
-	  (insert ?\  (symbol-name (caar attlist)) "=\"" (cdar attlist) ?\")
-	  (setq attlist (cdr attlist)))
+        ;;  output the attribute list
+        (setq attlist (xml-node-attributes tree))
+        (while attlist
+          (insert ?\  (symbol-name (caar attlist)) "=\""
+                  (xml-escape-string (cdar attlist)) ?\")
+          (setq attlist (cdr attlist)))
 
-	(setq tree (xml-node-children tree))
+        (setq tree (xml-node-children tree))
 
-	(if (null tree)
-	    (insert ?/ ?>)
-	  (insert ?>)
+        (if (null tree)
+            (insert ?/ ?>)
+          (insert ?>)
 
-	  ;;  output the children
-	  (dolist (node tree)
-	    (cond
-	     ((listp node)
-	      (insert ?\n)
-	      (xml-debug-print-internal node (concat indent-string "  ")))
-	     ((stringp node) (insert node))
-	     (t
-	      (error "Invalid XML tree"))))
+          ;;  output the children
+          (dolist (node tree)
+            (cond
+             ((listp node)
+              (insert ?\n)
+              (xml-debug-print-internal node (concat indent-string "  ")))
+             ((stringp node)
+              (insert (xml-escape-string node)))
+             (t
+              (error "Invalid XML tree"))))
 
-	  (when (not (and (null (cdr tree))
-			  (stringp (car tree))))
-	    (insert ?\n indent-string))
-	  (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))))
+          (when (not (and (null (cdr tree))
+                          (stringp (car tree))))
+            (insert ?\n indent-string))
+          (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))))
     
 (provide 'xml-rpc)
 
