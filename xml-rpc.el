@@ -11,9 +11,8 @@
 ;; Version: 1.6.8
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
-;; URL: http://emacswiki.org/emacs/xml-rpc.el
-;; Maintained-at: http://savannah.nongnu.org/bzr/?group=emacsweblogs
-;; Last Modified: <2010-02-25 17:07:43 mah>
+;; URL: http://launchpad.net/xml-rpc-el
+;; Last Modified: <2010-02-27 07:02:36 mah>
 
 (defconst xml-rpc-version "1.6.8"
   "Current version of xml-rpc.el")
