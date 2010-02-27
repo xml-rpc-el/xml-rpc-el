@@ -270,7 +270,7 @@ interpreting and simplifying it while retaining its structure."
       valvalue)
      ;; Integer
      ((eq valtype 'int)
-      (string-to-int valvalue))
+      (string-to-number valvalue))
      ;; Double/float
      ((eq valtype 'double)
       (string-to-number valvalue))
@@ -442,7 +442,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	(let ((url-request-method "POST")
 	      (url-package-name "xml-rpc.el")
 	      (url-package-version xml-rpc-version)
-	      (url-request-data (concat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+	      (url-request-data (concat "<?xml version=\"1.0\""
+                                        " encoding=\"UTF-8\"?>\n"
 					(with-temp-buffer
 					  (xml-print xml)
 					  (when xml-rpc-allow-unicode-string
@@ -455,7 +456,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	      (url-http-attempt-keepalives t)
 	      (url-request-extra-headers (list 
                                           (cons "Connection" "keep-alive")
-					  (cons "Content-Type" "text/xml; charset=utf-8"))))
+					  (cons "Content-Type"
+                                                "text/xml; charset=utf-8"))))
 	  (if (> xml-rpc-debug 1)
 	      (print url-request-data (create-file-buffer "request-data")))
 
@@ -465,7 +467,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 			   url-current-callback-data (list
 						      async-callback-function
 						      (current-buffer))	
-			   url-current-callback-func 'xml-rpc-request-callback-handler)
+			   url-current-callback-func
+                           'xml-rpc-request-callback-handler)
 		   (setq url-be-asynchronous nil))
 		 (url-retrieve server-url t)
 
