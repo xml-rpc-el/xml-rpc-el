@@ -1,4 +1,4 @@
-;; xml-rpc.el -- An elisp implementation of clientside XML-RPC
+;;; xml-rpc.el -- An elisp implementation of clientside XML-RPC
 
 ;; Copyright (C) 2001 CodeFactory AB.
 ;; Copyright (C) 2001 Daniel Lundin.
@@ -145,7 +145,7 @@
 
 (defun xml-rpc-clean-string (s)
   (if (string-match "\\`[ \t\n]*\\'" s)
-		    ;"^[ \t\n]*$" s)
+					;"^[ \t\n]*$" s)
       nil
     s))
 
@@ -228,43 +228,43 @@ interpreting and simplifying it while retaining its structure."
    ((and (xml-rpc-caddar-safe xml-list)
 	 (listp (car-safe (cdr-safe (cdr-safe (car-safe xml-list))))))
 
-	  (setq valtype (car (caddar xml-list))
-		valvalue (caddr (caddar xml-list)))
-	  (cond
-	   ;; Base64
-	   ((eq valtype 'base64)
-	    (rfc2047-decode "utf-8" ?B valvalue))
-	   ;; Boolean
-	   ((eq valtype 'boolean)
-	    (xml-rpc-string-to-boolean valvalue))
-	   ;; String
-	   ((eq valtype 'string)
-	    valvalue)
-	   ;; Integer
-	   ((eq valtype 'int)
-	    (string-to-int valvalue))
-	   ;; Double/float
-	   ((eq valtype 'double)
-	    (string-to-number valvalue))
-	   ;; Struct
-	   ((eq valtype 'struct)
-	    (mapcar (lambda (member)
-		      (let ((membername (cadr (cdaddr member)))
-			    (membervalue (xml-rpc-xml-list-to-value (cdddr member))))
-			(cons membername membervalue)))
-		    (cddr (caddar xml-list))))
-	   ;; Fault
-	   ((eq valtype 'fault)
-	    (let* ((struct (xml-rpc-xml-list-to-value (list valvalue)))
-		   (fault-string (cdr (assoc "faultString" struct)))
-		   (fault-code (cdr (assoc "faultCode" struct))))
-	      (list 'fault fault-code fault-string)))
+    (setq valtype (car (caddar xml-list))
+	  valvalue (caddr (caddar xml-list)))
+    (cond
+     ;; Base64
+     ((eq valtype 'base64)
+      (rfc2047-decode "utf-8" ?B valvalue))
+     ;; Boolean
+     ((eq valtype 'boolean)
+      (xml-rpc-string-to-boolean valvalue))
+     ;; String
+     ((eq valtype 'string)
+      valvalue)
+     ;; Integer
+     ((eq valtype 'int)
+      (string-to-int valvalue))
+     ;; Double/float
+     ((eq valtype 'double)
+      (string-to-number valvalue))
+     ;; Struct
+     ((eq valtype 'struct)
+      (mapcar (lambda (member)
+		(let ((membername (cadr (cdaddr member)))
+		      (membervalue (xml-rpc-xml-list-to-value (cdddr member))))
+		  (cons membername membervalue)))
+	      (cddr (caddar xml-list))))
+     ;; Fault
+     ((eq valtype 'fault)
+      (let* ((struct (xml-rpc-xml-list-to-value (list valvalue)))
+	     (fault-string (cdr (assoc "faultString" struct)))
+	     (fault-code (cdr (assoc "faultCode" struct))))
+	(list 'fault fault-code fault-string)))
 
-	   ;; Array
-	   ((eq valtype 'array)
-	    (mapcar (lambda (arrval)
-		      (xml-rpc-xml-list-to-value (list arrval)))
-		    (cddr valvalue)))))
+     ;; Array
+     ((eq valtype 'array)
+      (mapcar (lambda (arrval)
+		(xml-rpc-xml-list-to-value (list arrval)))
+	      (cddr valvalue)))))
    ((xml-rpc-caddar-safe xml-list))))
 
 (defun xml-rpc-boolean-to-string (value)
@@ -277,8 +277,8 @@ interpreting and simplifying it while retaining its structure."
   "Return XML representation of VALUE properly formatted for use with the  \
 functions in xml.el."
   (cond
-;   ((not value)
-;    nil)
+					;   ((not value)
+					;    nil)
    ((xml-rpc-value-booleanp value)
     `((value nil (boolean nil ,(xml-rpc-boolean-to-string value)))))
    ((listp value)
@@ -414,9 +414,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	      (url-package-name "xml-rpc.el")
 	      (url-package-version xml-rpc-version)
 	      (url-request-data (concat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-					 (with-temp-buffer
-					   (xml-print xml)
-					   (buffer-string))))
+					(with-temp-buffer
+					  (xml-print xml)
+					  (buffer-string))))
 	      (url-request-coding-system 'utf-8)
 	      (url-http-attempt-keepalives nil)
 	      (url-request-extra-headers (list 
@@ -431,7 +431,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 			   url-current-callback-data (list
 						      async-callback-function
 						      (current-buffer))	
-		   url-current-callback-func 'xml-rpc-request-callback-handler)
+			   url-current-callback-func 'xml-rpc-request-callback-handler)
 		   (setq url-be-asynchronous nil))
 		 (url-retrieve server-url t)
 
@@ -470,27 +470,27 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	  elem
 	  (result nil))
       (while l
-	; iterate
+					; iterate
 	(setq elem (car l)
 	      l (cdr l))
-	; test the head
+					; test the head
 	(cond
-	 ; a string, so clean it.
+					; a string, so clean it.
 	 ((stringp elem)
 	  (let ((tmp (xml-rpc-clean-string elem)))
 	    (if tmp
 		(setq result (append result (list tmp)))
 	      result)))
-	  ; a list, so recurse.
-	  ((listp elem)
-	   (setq result (append result (list (xml-rpc-clean elem)))))
+					; a list, so recurse.
+	 ((listp elem)
+	  (setq result (append result (list (xml-rpc-clean elem)))))
 
-	  ; everthing else, as is.
-	  (t
-	   (setq result (append result (list elem))))))
+					; everthing else, as is.
+	 (t
+	  (setq result (append result (list elem))))))
       result))
 
-   ((stringp l) ; will returning nil be acceptable ?
+   ((stringp l)			  ; will returning nil be acceptable ?
     elem)
 
    (t
@@ -536,7 +536,7 @@ handled from XML-BUFFER."
   
 
 (defun xml-rpc-method-call-async (async-callback-func server-url method
-							     &rest params)
+						      &rest params)
   "Call an XML-RPC method asynchronously at SERVER-URL named METHOD with \
 PARAMS as parameters. When the method returns, ASYNC-CALLBACK-FUNC will be \
 called with the result as parameter."
@@ -559,13 +559,58 @@ called with the result as parameter."
   "Call an XML-RPC method at SERVER-URL named METHOD with PARAMS as \
 parameters."
   (let ((response
-	  (xml-rpc-method-call-async nil server-url method params)))
+	 (xml-rpc-method-call-async nil server-url method params)))
     (cond ((stringp response)
 	   (list (cons nil (concat "URL/HTTP Error: " response))))
 	  (t
 	   (xml-rpc-xml-to-response response)))))
 
+(eval-when-compile
+  (unless (fboundp 'xml-print)
+    (defun xml-debug-print (xml &optional indent-string)
+      "Outputs the XML in the current buffer.
+XML can be a tree or a list of nodes.
+The first line is indented with the optional INDENT-STRING."
+      (setq indent-string (or indent-string ""))
+      (dolist (node xml)
+	(xml-debug-print-internal node indent-string)))
 
+    (defalias 'xml-print 'xml-debug-print)
+
+    (defun xml-debug-print-internal (xml indent-string)
+      "Outputs the XML tree in the current buffer.
+The first line is indented with INDENT-STRING."
+      (let ((tree xml)
+	    attlist)
+	(insert indent-string ?< (symbol-name (xml-node-name tree)))
+
+	;;  output the attribute list
+	(setq attlist (xml-node-attributes tree))
+	(while attlist
+	  (insert ?\  (symbol-name (caar attlist)) "=\"" (cdar attlist) ?\")
+	  (setq attlist (cdr attlist)))
+
+	(setq tree (xml-node-children tree))
+
+	(if (null tree)
+	    (insert ?/ ?>)
+	  (insert ?>)
+
+	  ;;  output the children
+	  (dolist (node tree)
+	    (cond
+	     ((listp node)
+	      (insert ?\n)
+	      (xml-debug-print-internal node (concat indent-string "  ")))
+	     ((stringp node) (insert node))
+	     (t
+	      (error "Invalid XML tree"))))
+
+	  (when (not (and (null (cdr tree))
+			  (stringp (car tree))))
+	    (insert ?\n indent-string))
+	  (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))))
+    
 (provide 'xml-rpc)
 
 ;;; xml-rpc.el ends here
