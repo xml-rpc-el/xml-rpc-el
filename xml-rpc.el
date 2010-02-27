@@ -482,7 +482,7 @@ and empty it"
     (while (progn (setq name (format " *XML-RPC-%d*" num)
 			buf (get-buffer name))
 		  (and buf (or (get-buffer-process buf)
-			       (save-excursion (set-buffer buf)
+			       (with-current-buffer buf
 					       (> (point-max) 1)))))
       (setq num (1+ num)))
     name))
@@ -545,8 +545,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 		   (let ((result (xml-rpc-request-process-buffer
 				  (current-buffer))))
 		     (when (> xml-rpc-debug 1) 
-                       (save-excursion
-                         (set-buffer (create-file-buffer "result-data"))
+                       (with-current-buffer (create-file-buffer "result-data")
                          (insert result)))
 		     result)))
 		(t			; Post emacs20 w3-el
@@ -609,8 +608,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 (defun xml-rpc-request-process-buffer (xml-buffer)
   "Process buffer XML-BUFFER."
   (unwind-protect
-      (save-excursion
-	(set-buffer xml-buffer)
+      (with-current-buffer xml-buffer
 	(when (fboundp 'url-uncompress)
           (let ((url-working-buffer xml-buffer))
             (url-uncompress)))
