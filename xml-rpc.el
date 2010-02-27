@@ -1,18 +1,19 @@
 ;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC
 
+;; Copyright (C) 2002-2009 Mark A. Hershberger
 ;; Copyright (C) 2001 CodeFactory AB.
 ;; Copyright (C) 2001 Daniel Lundin.
-;; Parts Copyright (C) 2002-2005 Mark A. Hershberger
-
 ;; Copyright (C) 2006 Shun-ichi Goto
 ;;   Modified for non-ASCII character handling.
 
-;; Author: Daniel Lundin <daniel@codefactory.se>
-;; Maintainer: Mark A. Hershberger <mah@everybody.org>
-;; Version: 1.6.4.1
+;; Author: Mark A. Hershberger <mah@everybody.org>
+;; Original Author: Daniel Lundin <daniel@codefactory.se>
+;; Version: 1.6.5
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://emacswiki.org/emacs/xml-rpc.el
+;; Last Modified: <2009-08-04 14:01:05 mah>
+;; Package-Requires: url
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
@@ -64,6 +65,7 @@
 ;;       string:  "foo"
 ;;        array:  '(1 2 3 4)   '(1 2 3 (4.1 4.2))
 ;;       struct:  '(("name" . "daniel") ("height" . 6.1))
+;;    dateTime:   (:datetime (1234 124))
 
 
 ;; Examples
@@ -112,6 +114,8 @@
 
 ;;; History:
 
+;; 1.6.5 - Made handling of dateTime elements more robust.
+
 ;; 1.6.4.1 - Updated to work with both Emacs22 and Emacs23.
 
 ;; 1.6.2.2 - Modified to allow non-ASCII string again.
@@ -158,9 +162,9 @@
 
 ;;; Code:
 
-(require 'custom)
 (require 'xml)
 (require 'url)
+(require 'timezone)
 (eval-when-compile
   (require 'cl))
 
@@ -289,7 +293,7 @@ interpreting and simplifying it while retaining its structure."
 		   (fault-code (cdr (assoc "faultCode" struct))))
 	      (list 'fault fault-code fault-string)))
      ;; DateTime
-     ((eq valtype 'dateTime\.iso8601)
+     ((eq valtype 'dateTime.iso8601)
       (list :datetime (date-to-time valvalue)))
      ((eq valtype 'dateTime)
       (list :datetime (date-to-time valvalue)))
@@ -308,7 +312,7 @@ interpreting and simplifying it while retaining its structure."
 
 (defun xml-rpc-datetime-to-string (value)
   "Convert a date time to a valid XML-RPC date"
-  (format-time-string "%Y%m%dT%H%M%S%z" value))
+  (format-time-string "%Y%m%dT%H%M%S%z" (cadr value)))
 
 (defun xml-rpc-value-to-xml-list (value)
   "Return XML representation of VALUE properly formatted for use with the  \
@@ -469,8 +473,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                                           (cons "Connection" "keep-alive")
 					  (cons "Content-Type"
                                                 "text/xml; charset=utf-8"))))
-	  (if (> xml-rpc-debug 1)
-	      (print url-request-data (create-file-buffer "request-data")))
+	  (when (> xml-rpc-debug 1)
+            (print url-request-data (create-file-buffer "request-data")))
 
 	  (cond ((boundp 'url-be-asynchronous) ; Sniff for w3 lib capability
 		 (if async-callback-function
@@ -483,14 +487,13 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 		   (setq url-be-asynchronous nil))
 		 (url-retrieve server-url t)
 
-		 (if url-be-asynchronous
-		     nil
+		 (when (not url-be-asynchronous)
 		   (let ((result (xml-rpc-request-process-buffer
 				  url-working-buffer)))
-		     (if (> xml-rpc-debug 1) 
-			 (save-excursion
-			   (set-buffer (create-file-buffer "result-data"))
-			   (insert result)))
+		     (when (> xml-rpc-debug 1) 
+                       (save-excursion
+                         (set-buffer (create-file-buffer "result-data"))
+                         (insert result)))
 		     result)))
 		(t			; Post emacs20 w3-el
 		 (if async-callback-function
@@ -498,14 +501,14 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 		   (let ((buffer (url-retrieve-synchronously server-url))
 			 result)
 		     (with-current-buffer buffer
-		       (if (not (numberp url-http-response-status))
-			   ;; this error may occur when keep-alive bug
-			   ;; of url-http.el is not cleared.
-			   (error "Why? url-http-response-status is %s"
-				  url-http-response-status))
-		       (if (> url-http-response-status 299)
-			   (error "Error during request: %s"
-				  url-http-response-status)))
+		       (when (not (numberp url-http-response-status))
+                         ;; this error may occur when keep-alive bug
+                         ;; of url-http.el is not cleared.
+                         (error "Why? url-http-response-status is %s"
+                                url-http-response-status))
+		       (when (> url-http-response-status 299)
+                         (error "Error during request: %s"
+                                url-http-response-status)))
 		     (xml-rpc-request-process-buffer buffer)))))))))
 
 
@@ -530,8 +533,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 					; a string, so clean it.
 	 ((stringp elem)
 	  (let ((tmp (xml-rpc-clean-string elem)))
-	    (if (and tmp xml-rpc-allow-unicode-string)
-		(setq tmp (decode-coding-string tmp 'utf-8)))
+	    (when (and tmp xml-rpc-allow-unicode-string)
+              (setq tmp (decode-coding-string tmp 'utf-8)))
 	    (if tmp
 		(setq result (append result (list tmp)))
 	      result)))
@@ -565,7 +568,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	       (result (cond
 			;; A probable XML response
 			((looking-at "<\\?xml ")
-			 (xml-rpc-clean (xml-parse-region (point-min) (point-max))))
+			 (xml-rpc-clean (xml-parse-region (point-min)
+                                                          (point-max))))
 			  
 			;; No HTTP status returned
 			((not status)
@@ -582,6 +586,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 			;; Valid HTTP status
 			(t
 			 (int-to-string status)))))
+          (when (< xml-rpc-debug 3)
+            (kill-buffer (current-buffer)))
 	  result))))
 
 
@@ -589,8 +595,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
   "Marshall a callback function request to CALLBACK-FUN with the results \
 handled from XML-BUFFER."
   (let ((xml-response (xml-rpc-request-process-buffer xml-buffer)))
-    (if (< xml-rpc-debug 1)
-	(kill-buffer xml-buffer))
+    (when (< xml-rpc-debug 1)
+      (kill-buffer xml-buffer))
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
   
 
@@ -610,8 +616,8 @@ called with the result as parameter."
 			     (car-safe params))))
 	 (m-func-call `((methodCall nil (methodName nil ,m-name)
 				    ,(append '(params nil) m-params)))))
-    (if (> xml-rpc-debug 1)
-	(print m-func-call (create-file-buffer "func-call")))
+    (when (> xml-rpc-debug 1)
+      (print m-func-call (create-file-buffer "func-call")))
     (xml-rpc-request server-url m-func-call async-callback-func)))
 
 (defun xml-rpc-method-call (server-url method &rest params)
@@ -685,8 +691,10 @@ The first line is indented with INDENT-STRING."
           (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))))
 
 (eval-when-compile
-  (defun timezone-parse-date (date)
-    "Parse DATE and return a vector [YEAR MONTH DAY TIME TIMEZONE].
+  (let ((tdate (timezone-parse-date "20090101T010101Z")))
+    (when (not (string-equal (aref tdate 0) "2009"))
+      (defun timezone-parse-date (date)
+        "Parse DATE and return a vector [YEAR MONTH DAY TIME TIMEZONE].
 Two-digit dates are `windowed'.  Those <69 have 2000 added; otherwise 1900
 is added.  Three-digit dates have 1900 added.
 TIMEZONE is nil for DATEs without a zone field.
@@ -700,106 +708,111 @@ Understands the following styles:
  (6) Thu, 11 Apr 16:17:12 91 [MET]
  (7) Mon, 6  Jul 16:47:20 T 1992 [MET]
  (8) 1996-06-24 21:13:12 [GMT]
- (9) 1996-06-24 21:13-ZONE"
-    ;; Get rid of any text properties.
-    (and (stringp date)
-         (or (text-properties-at 0 date)
-             (next-property-change 0 date))
-         (setq date (copy-sequence date))
-         (set-text-properties 0 (length date) nil date))
-    (let ((date (or date ""))
-          (year nil)
-          (month nil)
-          (day nil)
-          (time nil)
-          (zone nil))			;This may be nil.
-      (cond ((string-match
-              "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
-             ;; Styles: (1) and (2) with timezone and buggy timezone
-             ;; This is most common in mail and news,
-             ;; so it is worth trying first.
-             (setq year 3 month 2 day 1 time 4 zone 5))
-            ((string-match
-              "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]*\\'" date)
-             ;; Styles: (1) and (2) without timezone
-             (setq year 3 month 2 day 1 time 4 zone nil))
-            ((string-match
-              "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\'" date)
-             ;; Styles: (6) and (7) without timezone
-             (setq year 6 month 3 day 2 time 4 zone nil))
-            ((string-match
-              "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\([-+a-zA-Z0-9]+\\)" date)
-             ;; Styles: (6) and (7) with timezone and buggy timezone
-             (setq year 6 month 3 day 2 time 4 zone 7))
-            ((string-match
-              "\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([0-9]+\\)" date)
-             ;; Styles: (3) without timezone
-             (setq year 4 month 1 day 2 time 3 zone nil))
-            ((string-match
-              "\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)[ \t]+\\([0-9]+\\)" date)
-             ;; Styles: (3) with timezone
-             (setq year 5 month 1 day 2 time 3 zone 4))
-            ((string-match
-              "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+\\)[ \t]*\\([-+a-zA-Z0-9]+\\)" date)
-             ;; Styles: (4) with timezone
-             (setq year 3 month 2 day 1 time 4 zone 5))
-            ((string-match
-              "\\([0-9]+\\)-\\([A-Za-z]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)\\(\\.[0-9]+\\)?[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
-             ;; Styles: (5) with timezone.
-             (setq year 3 month 2 day 1 time 4 zone 6))
-            ((string-match
-              "\\([0-9]+\\)-\\([A-Za-z]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)\\(\\.[0-9]+\\)?" date)
-             ;; Styles: (5) without timezone.
-             (setq year 3 month 2 day 1 time 4 zone nil))
-            ((string-match
-              "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
-             ;; Styles: (8) with timezone.
-             (setq year 1 month 2 day 3 time 4 zone 5))
-            ((string-match
-              "\\([0-9]\\{4\\}\\)-?\\([0-9]\\{0,2\\}\\)-?\\([0-9]\\{0,2\\}\\)[T \t]+\\([0-9]\\{0,2\\}:?[0-9]\\{0,2\\}:?[0-9]\\{0,2\\}\\)[ \t]*\\([-+a-zA-Z]+[0-9:]*\\)" date)
-             ;; Styles: (8) with timezone with a colon in it.
-             (setq year 1 month 2 day 3 time 4 zone 5))
-            ((string-match
-              "\\([0-9]\\{4\\}\\)-?\\([0-9]\\{0,2\\}\\)-?\\([0-9]\\{0,2\\}\\)[T \t]+\\([0-9]+:?[0-9]+:?[0-9]+\\)" date)
-             ;; Styles: (8) without timezone.
-             (setq year 1 month 2 day 3 time 4 zone nil)))
+ (9) 1996-06-24 21:13-ZONE
+ (10) 19960624T211312"
+        ;; Get rid of any text properties.
+        (and (stringp date)
+             (or (text-properties-at 0 date)
+                 (next-property-change 0 date))
+             (setq date (copy-sequence date))
+             (set-text-properties 0 (length date) nil date))
+        (let ((date (or date ""))
+              (year nil)
+              (month nil)
+              (day nil)
+              (time nil)
+              (zone nil))			;This may be nil.
+          (cond ((string-match
+                  "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
+                 ;; Styles: (1) and (2) with timezone and buggy timezone
+                 ;; This is most common in mail and news,
+                 ;; so it is worth trying first.
+                 (setq year 3 month 2 day 1 time 4 zone 5))
+                ((string-match
+                  "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]*\\'" date)
+                 ;; Styles: (1) and (2) without timezone
+                 (setq year 3 month 2 day 1 time 4 zone nil))
+                ((string-match
+                  "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\'" date)
+                 ;; Styles: (6) and (7) without timezone
+                 (setq year 6 month 3 day 2 time 4 zone nil))
+                ((string-match
+                  "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\([-+a-zA-Z0-9]+\\)" date)
+                 ;; Styles: (6) and (7) with timezone and buggy timezone
+                 (setq year 6 month 3 day 2 time 4 zone 7))
+                ((string-match
+                  "\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([0-9]+\\)" date)
+                 ;; Styles: (3) without timezone
+                 (setq year 4 month 1 day 2 time 3 zone nil))
+                ((string-match
+                  "\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)[ \t]+\\([0-9]+\\)" date)
+                 ;; Styles: (3) with timezone
+                 (setq year 5 month 1 day 2 time 3 zone 4))
+                ((string-match
+                  "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+\\)[ \t]*\\([-+a-zA-Z0-9]+\\)" date)
+                 ;; Styles: (4) with timezone
+                 (setq year 3 month 2 day 1 time 4 zone 5))
+                ((string-match
+                  "\\([0-9]+\\)-\\([A-Za-z]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)\\(\\.[0-9]+\\)?[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
+                 ;; Styles: (5) with timezone.
+                 (setq year 3 month 2 day 1 time 4 zone 6))
+                ((string-match
+                  "\\([0-9]+\\)-\\([A-Za-z]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)\\(\\.[0-9]+\\)?" date)
+                 ;; Styles: (5) without timezone.
+                 (setq year 3 month 2 day 1 time 4 zone nil))
+                ((string-match
+                  "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9]+:[0-9]+\\)[ \t]+\\([-+a-zA-Z0-9]+\\)" date)
+                 ;; Styles: (8) with timezone.
+                 (setq year 1 month 2 day 3 time 4 zone 5))
+                ((string-match
+                  "\\([0-9]\\{4\\}\\)-?\\([0-9]\\{0,2\\}\\)-?\\([0-9]\\{0,2\\}\\)[T \t]+\\([0-9]\\{0,2\\}:?[0-9]\\{0,2\\}:?[0-9]\\{0,2\\}\\)[ \t]*\\([-+a-zA-Z]+[0-9:]*\\)" date)
+                 ;; Styles: (8) with timezone with a colon in it.
+                 (setq year 1 month 2 day 3 time 4 zone 5))
+                ((string-match
+                  "\\([0-9]\\{4\\}\\)-?\\([0-9]\\{0,2\\}\\)-?\\([0-9]\\{0,2\\}\\)[T \t]+\\([0-9]+:?[0-9]+:?[0-9]+\\)" date)
+                 ;; Styles: (8) without timezone.
+                 (setq year 1 month 2 day 3 time 4 zone nil)))
 
-      (when year
-        (setq year (match-string year date))
-        ;; Guess ambiguous years.  Assume years < 69 don't predate the
-        ;; Unix Epoch, so are 2000+.  Three-digit years are assumed to
-        ;; be relative to 1900.
-        (if (< (length year) 4)
-            (let ((y (string-to-number year)))
-              (if (< y 69)
+          (when year
+            (setq year (match-string year date))
+            ;; Guess ambiguous years.  Assume years < 69 don't predate the
+            ;; Unix Epoch, so are 2000+.  Three-digit years are assumed to
+            ;; be relative to 1900.
+            (when (< (length year) 4)
+              (let ((y (string-to-number year)))
+                (when (< y 69)
                   (setq y (+ y 100)))
-              (setq year (int-to-string (+ 1900 y)))))
-        (setq month
-              (if (or (= (aref date (+ (match-beginning month) 2)) ?-)
-                      (let ((n (string-to-number
-                                (char-to-string
-                                 (aref date (+ (match-beginning month) 2))))))
-                        (= (aref (number-to-string n) 0)
-                           (aref date (+ (match-beginning month) 2)))))
-                  ;; Handle numeric months, spanning exactly two digits.
-                  (substring date
-                             (match-beginning month)
-                             (+ (match-beginning month) 2))
-                (let* ((string (substring date
-                                          (match-beginning month)
-                                          (+ (match-beginning month) 3)))
-                       (monthnum
-                        (cdr (assoc (upcase string) timezone-months-assoc))))
-                  (if monthnum
-                      (int-to-string monthnum)))))
-        (setq day (match-string day date))
-        (setq time (match-string time date)))
-      (if zone (setq zone (match-string zone date)))
-      ;; Return a vector.
-      (if (and year month)
-          (vector year month day time zone)
-        (vector "0" "0" "0" "0" nil)))))
+                (setq year (int-to-string (+ 1900 y)))))
+            (setq month
+                  (if (or (= (aref date (+ (match-beginning month) 2)) ?-)
+                          (let ((n (string-to-number
+                                    (char-to-string
+                                     (aref date (+ (match-beginning month) 2))))))
+                            (= (aref (number-to-string n) 0)
+                               (aref date (+ (match-beginning month) 2)))))
+                      ;; Handle numeric months, spanning exactly two digits.
+                      (substring date
+                                 (match-beginning month)
+                                 (+ (match-beginning month) 2))
+                    (let* ((string (substring date
+                                              (match-beginning month)
+                                              (+ (match-beginning month) 3)))
+                           (monthnum
+                            (cdr (assoc (upcase string) timezone-months-assoc))))
+                      (when monthnum
+                        (int-to-string monthnum)))))
+            (setq day (match-string day date))
+            (setq time (match-string time date)))
+          (when zone (setq zone (match-string zone date)))
+          ;; Return a vector.
+          (if (and year month)
+              (vector year month day time zone)
+            (vector "0" "0" "0" "0" nil)))))))
 
 (provide 'xml-rpc)
+
+;; Local Variables:
+;; time-stamp-pattern: "20/^;; Last Modified: <%%>$"
+;; End:
 
 ;;; xml-rpc.el ends here
