@@ -172,18 +172,22 @@
   "*Hook run after loading xml-rpc."
   :type 'hook :group 'xml-rpc)
 
-(defcustom xml-rpc-allow-unicode-string t
+(defcustom xml-rpc-allow-unicode-string (coding-system-p 'utf-8)
   "If non-nil, non-ASCII data is composed as 'value' instead of 'base64'.
 And this option overrides `xml-rpc-base64-encode-unicode' and
 `xml-rpc-base64-decode-unicode' if set as non-nil."
   :type 'boolean :group 'xml-rpc)
 
-(defcustom xml-rpc-base64-encode-unicode t
+(defcustom xml-rpc-base64-encode-unicode (coding-system-p 'utf-8)
   "If non-nil, then strings with non-ascii characters will be turned
 into Base64."
   :type 'boolean :group 'xml-rpc)
 
-(defcustom xml-rpc-base64-decode-unicode t
+(defcustom xml-rpc-use-coding-system (if (coding-system-p 'utf-8) 'utf-8 'iso-8859-1)
+  "The coding system to use."
+  :type 'symbol :group 'xml-rpc)
+
+(defcustom xml-rpc-base64-decode-unicode (coding-system-p 'utf-8)
   "If non-nil, then base64 strings will be decoded using the
 utf-8 coding system."
   :type 'boolean :group 'xml-rpc)
@@ -354,8 +358,11 @@ functions in xml.el."
 		   (eq 'ascii (car charset-list)))
 	      (not xml-rpc-base64-encode-unicode))
 	  `((value nil (string nil ,value)))
-	`((value nil (base64 nil ,(base64-encode-string
-				   (encode-coding-string value 'utf-8))))))))
+	`((value nil (base64 nil ,(if xml-rpc-base64-encode-unicode
+                                      (base64-encode-string
+                                       (encode-coding-string
+                                        value xml-rpc-use-coding-system))
+                                    (base64-encode-string value))))))))
    ((xml-rpc-value-doublep value)
     `((value nil (double nil ,(number-to-string value)))))
    (t
@@ -467,7 +474,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 					  (buffer-string))
 					"\n"))
 	      (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
-	      (url-request-coding-system 'utf-8)
+	      (url-request-coding-system xml-rpc-use-coding-system)
 	      (url-http-attempt-keepalives t)
 	      (url-request-extra-headers (list 
                                           (cons "Connection" "keep-alive")
@@ -489,7 +496,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 
 		 (when (not url-be-asynchronous)
 		   (let ((result (xml-rpc-request-process-buffer
-				  url-working-buffer)))
+				  (current-buffer))))
 		     (when (> xml-rpc-debug 1) 
                        (save-excursion
                          (set-buffer (create-file-buffer "result-data"))
@@ -534,7 +541,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	 ((stringp elem)
 	  (let ((tmp (xml-rpc-clean-string elem)))
 	    (when (and tmp xml-rpc-allow-unicode-string)
-              (setq tmp (decode-coding-string tmp 'utf-8)))
+              (setq tmp (decode-coding-string tmp xml-rpc-use-coding-system)))
 	    (if tmp
 		(setq result (append result (list tmp)))
 	      result)))
@@ -559,12 +566,14 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
       (save-excursion
 	(set-buffer xml-buffer)
 	(when (fboundp 'url-uncompress)
-	  (url-uncompress))
+          (let ((url-working-buffer xml-buffer))
+            (url-uncompress)))
 	(goto-char (point-min))
 	(search-forward-regexp "<\\?xml" nil t)
 	(move-to-column 0)
 	;; Gather the results
-	(let* ((status url-http-response-status)
+	(let* ((status (if (boundp 'url-http-response-status)
+                           url-http-response-status 200)) ; Old URL lib doesn't save the result.
 	       (result (cond
 			;; A probable XML response
 			((looking-at "<\\?xml ")
@@ -641,6 +650,14 @@ The first line is indented with the optional INDENT-STRING."
         (xml-debug-print-internal node indent-string)))
 
     (defalias 'xml-print 'xml-debug-print)
+
+    (when (not (boundp 'xml-entity-alist))
+      (defvar xml-entity-alist
+        '(("lt" . "<")
+          ("gt" . ">")
+          ("apos" . "'")
+          ("quot" . "\"")
+          ("amp" . "&"))))
 
     (defun xml-escape-string (string)
       "Return the string with entity substitutions made from
