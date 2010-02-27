@@ -357,7 +357,7 @@ functions in xml.el."
                                             (cdar value)))))
                     result (append result xmlval)
                     value (cdr value)))
-       `((evalue nil ,(append '(struct nil) result)))))
+       `((value nil ,(append '(struct nil) result)))))
    ;; Value is a scalar
    ((xml-rpc-value-intp value)
     `((value nil (int nil ,(int-to-string value)))))
