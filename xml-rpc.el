@@ -8,12 +8,12 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.5
+;; Version: 1.6.5.1
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://emacswiki.org/emacs/xml-rpc.el
-;; Last Modified: <2009-08-12 19:20:27 mah>
-;; Package-Requires: url
+;; Maintained-at: http://savannah.nongnu.org/bzr/?group=emacsweblogs
+;; Last Modified: <2009-09-09 21:09:47 mah>
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
@@ -114,7 +114,9 @@
 
 ;;; History:
 
-;; 1.6.5 - Made handling of dateTime elements more robust.
+;; 1.6.5.1 - Fix compile time warnings.
+
+;; 1.6.5   - Made handling of dateTime elements more robust.
 
 ;; 1.6.4.1 - Updated to work with both Emacs22 and Emacs23.
 
@@ -127,37 +129,37 @@
 ;;           make 'value' object instead of 'base64' object.
 ;;           This is good for WikiRPC.
 
-;; 1.6.2 - Fix whitespace issues to work better with new xml.el
-;;         Fix bug in string handling.
-;;         Add support for gzip-encoding when needed.
+;; 1.6.2   - Fix whitespace issues to work better with new xml.el
+;;           Fix bug in string handling.
+;;           Add support for gzip-encoding when needed.
 
-;; 1.6.1 - base64 support added.
-;;         url-insert-entities-in-string done on string types now.
+;; 1.6.1   - base64 support added.
+;;           url-insert-entities-in-string done on string types now.
 
-;; 1.6 - Fixed dependencies (remove w3, add cl).
-;;       Move string-to-boolean and boolean-to-string into xml-rpc namespace.
-;;       Fix bug in xml-rpc-xml-to-response where non-existent var was.
-;;       More tweaking of "Connection: close" header.
-;;       Fix bug in xml-rpc-request-process-buffer so that this works with
-;;         different mixes of the url.el code.
+;; 1.6     - Fixed dependencies (remove w3, add cl).
+;;           Move string-to-boolean and boolean-to-string into xml-rpc namespace.
+;;           Fix bug in xml-rpc-xml-to-response where non-existent var was.
+;;           More tweaking of "Connection: close" header.
+;;           Fix bug in xml-rpc-request-process-buffer so that this works with
+;;           different mixes of the url.el code.
 
-;; 1.5.1 - Added Andrew J Cosgriff's patch to make the
-;;         xml-rpc-clean-string function work in XEmacs.
+;; 1.5.1   - Added Andrew J Cosgriff's patch to make the
+;;           xml-rpc-clean-string function work in XEmacs.
 
-;; 1.5 - Added headers to the outgoing url-retreive-synchronously
-;;       so that it would close connections immediately on completion.
+;; 1.5     - Added headers to the outgoing url-retreive-synchronously
+;;           so that it would close connections immediately on completion.
 
-;; 1.4 - Added conditional debugging code.  Added version tag.
+;; 1.4     - Added conditional debugging code.  Added version tag.
 
-;; 1.2 - Better error handling.  The documentation didn't match
-;;       the code.  That was changed so that an error was
-;;       signaled.  Also, better handling of various and
-;;       different combinations of xml.el and url.el.
+;; 1.2     - Better error handling.  The documentation didn't match
+;;           the code.  That was changed so that an error was
+;;           signaled.  Also, better handling of various and
+;;           different combinations of xml.el and url.el.
 
-;; 1.1 - Added support for boolean types.  If the type of a
-;;       returned value is not specified, string is assumed
+;; 1.1     - Added support for boolean types.  If the type of a
+;;           returned value is not specified, string is assumed
 
-;; 1.0 - First version
+;; 1.0     - First version
 
 
 ;;; Code:
@@ -168,8 +170,11 @@
 (eval-when-compile
   (require 'cl))
 
+(defconst xml-rpc-version "1.6.5.1"
+  "Current Version of xml-rpc.el")
+
 (defcustom xml-rpc-load-hook nil
-  "*Hook run after loading xml-rpc."
+ "*Hook run after loading xml-rpc."
   :type 'hook :group 'xml-rpc)
 
 (defcustom xml-rpc-allow-unicode-string (coding-system-p 'utf-8)
@@ -194,24 +199,28 @@ utf-8 coding system."
 
 (defcustom xml-rpc-debug 0
   "Set this to 1 or greater to avoid killing temporary buffers.
-Set it higher to get some info in the *Messages* buffer")
+Set it higher to get some info in the *Messages* buffer"
+  :type 'integerp :group 'xml-rpc)
 
-(defconst xml-rpc-version "1.6"
-  "Current Version of xml-rpc.el")
+(defvar xml-rpc-fault-string nil
+  "Contains the fault string if a fault is returned")
+
+(defvar xml-rpc-fault-code nil
+  "Contains the fault code if a fault is returned")
 
 ;;
 ;; Value type handling functions
 ;;
 
-(defun xml-rpc-value-intp (value)
+(defsubst xml-rpc-value-intp (value)
   "Return t if VALUE is an integer."
   (integerp value))
 
-(defun xml-rpc-value-doublep (value)
+(defsubst xml-rpc-value-doublep (value)
   "Return t if VALUE is a double precision number."
   (floatp value))
 
-(defun xml-rpc-value-stringp (value)
+(defsubst xml-rpc-value-stringp (value)
   "Return t if VALUE is a string."
   (stringp value))
 
@@ -259,54 +268,55 @@ time, or it will be confused for a list."
 (defun xml-rpc-xml-list-to-value (xml-list)
   "Convert an XML-RPC structure in an xml.el style XML-LIST to an elisp list, \
 interpreting and simplifying it while retaining its structure."
-  (cond 
-   ((and (xml-rpc-caddar-safe xml-list)
-	 (listp (car-safe (cdr-safe (cdr-safe (car-safe xml-list))))))
-
-    (setq valtype (car (caddar xml-list))
-	  valvalue (caddr (caddar xml-list)))
+  (let (valtype valvalue)
     (cond
-     ;; Base64
-     ((eq valtype 'base64)
-      (if xml-rpc-base64-decode-unicode
-	  (decode-coding-string (base64-decode-string valvalue) 'utf-8)
-	(base64-decode-string valvalue)))
-     ;; Boolean
-     ((eq valtype 'boolean)
-      (xml-rpc-string-to-boolean valvalue))
-     ;; String
-     ((eq valtype 'string)
-      valvalue)
-     ;; Integer
-     ((or (eq valtype 'int) (eq valtype 'i4))
-      (string-to-number valvalue))
-     ;; Double/float
-     ((eq valtype 'double)
-      (string-to-number valvalue))
-     ;; Struct
-     ((eq valtype 'struct)
-      (mapcar (lambda (member)
-		(let ((membername (cadr (cdaddr member)))
-		      (membervalue (xml-rpc-xml-list-to-value (cdddr member))))
-		  (cons membername membervalue)))
-	      (cddr (caddar xml-list))))
-     ;; Fault
-     ((eq valtype 'fault)
-      (let* ((struct (xml-rpc-xml-list-to-value (list valvalue)))
-		   (fault-string (cdr (assoc "faultString" struct)))
-		   (fault-code (cdr (assoc "faultCode" struct))))
-	      (list 'fault fault-code fault-string)))
-     ;; DateTime
-     ((eq valtype 'dateTime.iso8601)
-      (list :datetime (date-to-time valvalue)))
-     ((eq valtype 'dateTime)
-      (list :datetime (date-to-time valvalue)))
-     ;; Array
-     ((eq valtype 'array)
-      (mapcar (lambda (arrval)
-		(xml-rpc-xml-list-to-value (list arrval)))
-	      (cddr valvalue)))))
-   ((xml-rpc-caddar-safe xml-list))))
+     ((and (xml-rpc-caddar-safe xml-list)
+           (listp (car-safe (cdr-safe (cdr-safe (car-safe xml-list))))))
+
+      (setq valtype (car (caddar xml-list))
+            valvalue (caddr (caddar xml-list)))
+      (cond
+       ;; Base64
+       ((eq valtype 'base64)
+        (if xml-rpc-base64-decode-unicode
+            (decode-coding-string (base64-decode-string valvalue) 'utf-8)
+          (base64-decode-string valvalue)))
+       ;; Boolean
+       ((eq valtype 'boolean)
+        (xml-rpc-string-to-boolean valvalue))
+       ;; String
+       ((eq valtype 'string)
+        valvalue)
+       ;; Integer
+       ((or (eq valtype 'int) (eq valtype 'i4))
+        (string-to-number valvalue))
+       ;; Double/float
+       ((eq valtype 'double)
+        (string-to-number valvalue))
+       ;; Struct
+       ((eq valtype 'struct)
+        (mapcar (lambda (member)
+                  (let ((membername (cadr (cdaddr member)))
+                        (membervalue (xml-rpc-xml-list-to-value (cdddr member))))
+                    (cons membername membervalue)))
+                (cddr (caddar xml-list))))
+       ;; Fault
+       ((eq valtype 'fault)
+        (let* ((struct (xml-rpc-xml-list-to-value (list valvalue)))
+               (fault-string (cdr (assoc "faultString" struct)))
+               (fault-code (cdr (assoc "faultCode" struct))))
+          (list 'fault fault-code fault-string)))
+       ;; DateTime
+       ((eq valtype 'dateTime.iso8601)
+        (list :datetime (date-to-time valvalue)))
+       ((eq valtype 'dateTime)
+        (list :datetime (date-to-time valvalue)))
+       ;; Array
+       ((eq valtype 'array)
+        (mapcar (lambda (arrval)
+                  (xml-rpc-xml-list-to-value (list arrval)))
+                (cddr valvalue)))))
+     ((xml-rpc-caddar-safe xml-list)))))
 
 (defun xml-rpc-boolean-to-string (value)
   "Convert a boolean value to a string"
@@ -420,7 +430,7 @@ the parsed XML response is returned."
       (setq xml-rpc-fault-string (nth 2 resp))
       (setq xml-rpc-fault-code   (nth 1 resp))
       (error "XML-RPC fault `%s'" xml-rpc-fault-string)))
- 
+
    ;; Interpret the XML list and produce a more useful data structure
    (t
     (let ((valpart (cdr (cdaddr (caddar xml)))))
@@ -459,6 +469,9 @@ a single argument being an xml.el style XML list.
 
 It returns an XML list containing the method response from the XML-RPC server,
 or nil if called with ASYNC-CALLBACK-FUNCTION."
+  (declare (special url-current-callback-data
+                    url-current-callback-func
+                    url-http-response-status))
   (unwind-protect
       (save-excursion
 	(let ((url-request-method "POST")
@@ -476,7 +489,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	      (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
 	      (url-request-coding-system xml-rpc-use-coding-system)
 	      (url-http-attempt-keepalives t)
-	      (url-request-extra-headers (list 
+	      (url-request-extra-headers (list
                                           (cons "Connection" "keep-alive")
 					  (cons "Content-Type"
                                                 "text/xml; charset=utf-8"))))
@@ -555,10 +568,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
       result))
 
    ((stringp l)			  ; will returning nil be acceptable ?
-    elem)
+    nil)
 
-   (t
-    l)))
+   (t l)))
 
 (defun xml-rpc-request-process-buffer (xml-buffer)
   "Process buffer XML-BUFFER."
