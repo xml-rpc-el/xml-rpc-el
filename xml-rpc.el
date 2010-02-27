@@ -114,6 +114,8 @@
 
 ;;; History:
 
+;; 1.6.7   - Add a report-xml-rpc-bug function
+
 ;; 1.6.6   - Use the correct dateTime elements.  Fix bug in parsing null int.
 
 ;; 1.6.5.1 - Fix compile time warnings.
@@ -139,7 +141,8 @@
 ;;           url-insert-entities-in-string done on string types now.
 
 ;; 1.6     - Fixed dependencies (remove w3, add cl).
-;;           Move string-to-boolean and boolean-to-string into xml-rpc namespace.
+;;           Move string-to-boolean and boolean-to-string into xml-rpc
+;;           namespace.
 ;;           Fix bug in xml-rpc-xml-to-response where non-existent var was.
 ;;           More tweaking of "Connection: close" header.
 ;;           Fix bug in xml-rpc-request-process-buffer so that this works with
@@ -175,9 +178,17 @@
 (defconst xml-rpc-version "1.6.7"
   "Current Version of xml-rpc.el")
 
+(defconst xml-rpc-maintainer-address "mah@everybody.org"
+  "The address where bug reports should be sent.")
+
 (defcustom xml-rpc-load-hook nil
   "*Hook run after loading xml-rpc."
   :type 'hook :group 'xml-rpc)
+
+(defcustom xml-rpc-use-coding-system
+  (if (coding-system-p 'utf-8) 'utf-8 'iso-8859-1)
+  "The coding system to use."
+  :type 'symbol :group 'xml-rpc)
 
 (defcustom xml-rpc-allow-unicode-string (coding-system-p 'utf-8)
   "If non-nil, non-ASCII data is composed as 'value' instead of 'base64'.
@@ -189,10 +200,6 @@ And this option overrides `xml-rpc-base64-encode-unicode' and
   "If non-nil, then strings with non-ascii characters will be turned
 into Base64."
   :type 'boolean :group 'xml-rpc)
-
-(defcustom xml-rpc-use-coding-system (if (coding-system-p 'utf-8) 'utf-8 'iso-8859-1)
-  "The coding system to use."
-  :type 'symbol :group 'xml-rpc)
 
 (defcustom xml-rpc-base64-decode-unicode (coding-system-p 'utf-8)
   "If non-nil, then base64 strings will be decoded using the
@@ -249,6 +256,25 @@ Set it higher to get some info in the *Messages* buffer"
        (not (xml-rpc-value-datetimep value))
        (not (xml-rpc-value-structp value))))
 
+(defun xml-rpc-submit-bug-report ()
+ "Submit a bug report on xml-rpc."
+ (interactive)
+ (require 'reporter)
+ (let ((xml-rpc-tz-pd-defined-in
+        (if (fboundp 'find-lisp-object-file-name)
+            (find-lisp-object-file-name
+             'timezone-parse-date (symbol-function 'timezone-parse-date))
+          (symbol-file 'timezone-parse-date))))
+   (reporter-submit-bug-report
+    xml-rpc-maintainer-address
+    (concat "xml-rpc.el " xml-rpc-version)
+    (list 'xml-rpc-tz-pd-defined-in
+          'xml-rpc-load-hook
+          'xml-rpc-use-coding-system
+          'xml-rpc-allow-unicode-string
+          'xml-rpc-base64-encode-unicode
+          'xml-rpc-base64-decode-unicode))))
+
 (defun xml-rpc-value-booleanp (value)
   "Return t if VALUE is a boolean."
   (or (eq value nil)
@@ -300,7 +326,8 @@ interpreting and simplifying it while retaining its structure."
        ((eq valtype 'struct)
         (mapcar (lambda (member)
                   (let ((membername (cadr (cdaddr member)))
-                        (membervalue (xml-rpc-xml-list-to-value (cdddr member))))
+                        (membervalue (xml-rpc-xml-list-to-value
+				      (cdddr member))))
                     (cons membername membervalue)))
                 (cddr (caddar xml-list))))
        ;; Fault
@@ -587,7 +614,8 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	(move-to-column 0)
 	;; Gather the results
 	(let* ((status (if (boundp 'url-http-response-status)
-                           url-http-response-status 200)) ; Old URL lib doesn't save the result.
+                                        ; Old URL lib doesn't save the result.
+                           url-http-response-status 200))
 	       (result (cond
 			;; A probable XML response
 			((looking-at "<\\?xml ")
