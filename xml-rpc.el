@@ -233,7 +233,7 @@ interpreting and simplifying it while retaining its structure."
     (cond
      ;; Base64
      ((eq valtype 'base64)
-      (rfc2047-decode "utf-8" "B" valvalue))
+      (rfc2047-decode "utf-8" ?B valvalue))
      ;; Boolean
      ((eq valtype 'boolean)
       (xml-rpc-string-to-boolean valvalue))
@@ -256,13 +256,15 @@ interpreting and simplifying it while retaining its structure."
      ;; Fault
      ((eq valtype 'fault)
       (let* ((struct (xml-rpc-xml-list-to-value (list valvalue)))
-	     (fault-string (cdr (assoc "faultString" struct)))
-	     (fault-code (cdr (assoc "faultCode" struct))))
-	(list 'fault fault-code fault-string)))
-
-     ;; Array
-     ((eq valtype 'array)
-      (mapcar (lambda (arrval)
+		   (fault-string (cdr (assoc "faultString" struct)))
+		   (fault-code (cdr (assoc "faultCode" struct))))
+	      (list 'fault fault-code fault-string)))
+           ;; DateTime
+           ((eq valtype 'dateTime\.iso8601)
+            valvalue)
+	   ;; Array
+	   ((eq valtype 'array)
+	    (mapcar (lambda (arrval)
 		(xml-rpc-xml-list-to-value (list arrval)))
 	      (cddr valvalue)))))
    ((xml-rpc-caddar-safe xml-list))))
@@ -519,7 +521,12 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 				(search-forward "\n---- Error was: ----\n")))
 			   (and errstart
 				(buffer-substring errstart (point-max)))))
-		      
+
+			;; Maybe they just gave us an the XML w/o PI?
+			((search-forward "<methodResponse>" nil t)
+			 (xml-rpc-clean (xml-parse-region (match-beginning 0)
+							  (point-max))))
+
 			;; Valid HTTP status
 			(t
 			 (int-to-string status)))))
