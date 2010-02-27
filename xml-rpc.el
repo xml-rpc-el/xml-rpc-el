@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2001 CodeFactory AB.
 ;; Copyright (C) 2001 Daniel Lundin.
-;; Parts Copyright (C) 2002-2003 Mark A. Hershberger
+;; Parts Copyright (C) 2002-2005 Mark A. Hershberger
 
 ;; Author: Daniel Lundin <daniel@codefactory.se>
 ;; Maintainer: Mark A. Hershberger <mah@everybody.org>
@@ -144,7 +144,7 @@
 ;;; Code:
 
 (defun xml-rpc-clean-string (s)
-  (if (string-match "\\`[ \t\n]*\\'" s)
+  (if (string-match "\\`[ \t\n\r]*\\'" s)
 					;"^[ \t\n]*$" s)
       nil
     s))
@@ -341,7 +341,7 @@ functions in xml.el."
   "An 'xml-rpc-method-call'  result value is always a list, where the first \
 element in RESPONSE is either nil or if an error occured, a cons pair \
 according to (errnum .  \"Error string\"),"
-  (eq 'fault (car (caddar response))))
+  (eq 'fault (car-safe (caddar response))))
 
 (defsubst xml-rpc-response-error-code (response)
   "Return the error code from RESPONSE."
@@ -506,7 +506,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	(when (fboundp 'url-uncompress)
 	  (url-uncompress))
 	(goto-char (point-min))
-	(search-forward-regexp "<\\?xml")
+	(search-forward-regexp "<\\?xml" nil t)
 	(move-to-column 0)
 	;; Gather the results
 	(let* ((status url-http-response-status)
