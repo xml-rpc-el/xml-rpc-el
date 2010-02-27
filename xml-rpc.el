@@ -65,6 +65,9 @@
 ;; xml.el is a part of GNU Emacs 21, but can also be downloaded from
 ;; here: <URL:ftp://ftp.codefactory.se/pub/people/daniel/elisp/xml.el>
 
+;;; Bug reports
+
+;; Please use M-x xml-rpc-submit-bug-report to report bugs.
 
 ;;; XML-RPC datatypes are represented as follows
 
@@ -271,11 +274,13 @@ Set it higher to get some info in the *Messages* buffer"
         (if (fboundp 'find-lisp-object-file-name)
             (find-lisp-object-file-name
              'timezone-parse-date (symbol-function 'timezone-parse-date))
-          (symbol-file 'timezone-parse-date))))
+          (symbol-file 'timezone-parse-date)))
+       (date-parses-as (timezone-parse-date "20091130T00:52:53")))
    (reporter-submit-bug-report
     xml-rpc-maintainer-address
     (concat "xml-rpc.el " xml-rpc-version)
     (list 'xml-rpc-tz-pd-defined-in
+          'date-parses-as
           'xml-rpc-load-hook
           'xml-rpc-use-coding-system
           'xml-rpc-allow-unicode-string
