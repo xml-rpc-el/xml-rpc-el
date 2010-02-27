@@ -164,6 +164,11 @@
 into Base64."
   :type 'boolean :group 'xml-rpc)
 
+(defcustom xml-rpc-base64-decode-unicode t
+  "If non-nil, then base64 strings will be decoded using the
+utf-8 coding system."
+  :type 'boolean :group 'xml-rpc)
+
 (defcustom xml-rpc-debug 0
   "Set this to 1 or greater to avoid killing temporary buffers.
 Set it higher to get some info in the *Messages* buffer")
@@ -233,7 +238,9 @@ interpreting and simplifying it while retaining its structure."
     (cond
      ;; Base64
      ((eq valtype 'base64)
-      (rfc2047-decode "utf-8" ?B valvalue))
+      (if xml-rpc-base64-decode-unicode
+	  (decode-coding-string (base64-decode-string valvalue) 'utf-8)
+	(base64-decode-string valvalue)))
      ;; Boolean
      ((eq valtype 'boolean)
       (xml-rpc-string-to-boolean valvalue))
@@ -512,7 +519,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 	(let* ((status url-http-response-status)
 	       (result (cond
 			;; A probable XML response
-			((looking-at "<\\?xml *version=.*\\??>")
+			((looking-at "<\\?xml ")
 			 (xml-rpc-clean (xml-parse-region (point-min) (point-max))))
 			  
 			;; No HTTP status returned
