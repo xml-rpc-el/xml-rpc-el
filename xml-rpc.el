@@ -509,9 +509,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                                         "\n"))
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
               (url-request-coding-system xml-rpc-use-coding-system)
-              (url-http-attempt-keepalives t)
+              (url-http-attempt-keepalives nil)
               (url-request-extra-headers (list
-                                          (cons "Connection" "keep-alive")
+                                          (cons "Connection" "close")
                                           (cons "Content-Type"
                                                 "text/xml; charset=utf-8"))))
           (when (> xml-rpc-debug 1)
