@@ -561,8 +561,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 (defun xml-rpc-clean (l)
   (cond
    ((listp l)
-    (let ((remain l)
-          elem
+    (let (elem
           (result nil))
       (while l
         ;; iterate
