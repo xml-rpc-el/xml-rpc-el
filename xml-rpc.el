@@ -12,7 +12,7 @@
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2010-02-27 07:02:36 mah>
+;; Last Modified: <2010-03-02 17:05:18 mah>
 
 (defconst xml-rpc-version "1.6.8"
   "Current version of xml-rpc.el")
@@ -532,14 +532,12 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                    (let ((result (xml-rpc-request-process-buffer
                                   (current-buffer))))
                      (when (> xml-rpc-debug 1)
-                       (with-current-buffer (create-file-buffer "result-data")
-                         (insert result)))
+                       (print result (create-file-buffer "result-data")))
                      result)))
                 (t                      ; Post emacs20 w3-el
                  (if async-callback-function
                      (url-retrieve server-url async-callback-function)
-                   (let ((buffer (url-retrieve-synchronously server-url))
-                         result)
+                   (let ((buffer (url-retrieve-synchronously server-url)))
                      (with-current-buffer buffer
                        (when (not (numberp url-http-response-status))
                          ;; this error may occur when keep-alive bug
