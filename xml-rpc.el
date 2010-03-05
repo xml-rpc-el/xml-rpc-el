@@ -8,13 +8,13 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.8
+;; Version: 1.6.9a
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2010-03-05 13:41:20 mah>
+;; Last Modified: <2010-03-05 15:00:19 mah>
 
-(defconst xml-rpc-version "1.6.8"
+(defconst xml-rpc-version "1.6.9a"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
