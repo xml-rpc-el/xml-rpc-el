@@ -12,7 +12,7 @@
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2010-03-02 17:05:18 mah>
+;; Last Modified: <2010-03-05 13:41:20 mah>
 
 (defconst xml-rpc-version "1.6.8"
   "Current version of xml-rpc.el")
@@ -125,6 +125,8 @@
 ;;; History:
 
 ;; 1.6.8   - Add a report-xml-rpc-bug function
+;;           Eliminate unused xml-rpc-get-temp-buffer-name
+;;           Improve compatibility with Xemacs
 
 ;; 1.6.7   - Skipped version
 
