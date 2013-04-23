@@ -8,13 +8,13 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.9a
+;; Version: 1.6.9
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2010-03-11 01:50:35 mah>
+;; Last Modified: <2013-04-23 16:54:08 mah>
 
-(defconst xml-rpc-version "1.6.9a"
+(defconst xml-rpc-version "1.6.9"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
@@ -123,6 +123,9 @@
 
 
 ;;; History:
+
+;; 1.6.9   - Add support for the i8 type (64 bit integers)
+;;         - Quote lambda with #' instead of ' to silence byte compiler
 
 ;; 1.6.8   - Add a report-xml-rpc-bug function
 ;;           Eliminate unused xml-rpc-get-temp-buffer-name
@@ -330,7 +333,7 @@ interpreting and simplifying it while retaining its structure."
        ((eq valtype 'string)
         valvalue)
        ;; Integer
-       ((or (eq valtype 'int) (eq valtype 'i4))
+       ((or (eq valtype 'int) (eq valtype 'i4) (eq valtype 'i8))
         (string-to-number (or valvalue "0")))
        ;; Double/float
        ((eq valtype 'double)
@@ -650,9 +653,9 @@ called with the result as parameter."
   (let* ((m-name (if (stringp method)
                      method
                    (symbol-name method)))
-         (m-params (mapcar '(lambda (p)
-                              `(param nil ,(car (xml-rpc-value-to-xml-list
-                                                 p))))
+         (m-params (mapcar #'(lambda (p)
+                               `(param nil ,(car (xml-rpc-value-to-xml-list
+                                                  p))))
                            (if async-callback-func
                                params
                              (car-safe params))))
