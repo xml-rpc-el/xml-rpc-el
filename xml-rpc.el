@@ -246,6 +246,10 @@ Set it higher to get some info in the *Messages* buffer"
 (defvar xml-rpc-fault-code nil
   "Contains the fault code if a fault is returned")
 
+(defvar xml-rpc-request-extra-headers nil
+  "A list of extra headers to send with the next request.
+Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
+
 ;;
 ;; Value type handling functions
 ;;
@@ -560,10 +564,12 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
               (url-request-coding-system xml-rpc-use-coding-system)
               (url-http-attempt-keepalives t)
-              (url-request-extra-headers (list
-                                          (cons "Connection" "close")
-                                          (cons "Content-Type"
-                                                "text/xml; charset=utf-8"))))
+              (url-request-extra-headers (append
+                                          (list
+                                           (cons "Connection" "close")
+                                           (cons "Content-Type"
+                                                 "text/xml; charset=utf-8"))
+                                          xml-rpc-request-extra-headers)))
           (when (> xml-rpc-debug 1)
             (print url-request-data (create-file-buffer "request-data")))
 
