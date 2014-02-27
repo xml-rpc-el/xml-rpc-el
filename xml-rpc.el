@@ -592,7 +592,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                      result)))
                 (t                      ; Post emacs20 w3-el
                  (if async-callback-function
-                     (url-retrieve server-url async-callback-function)
+                     (let ((cbargs (list async-callback-function)))
+                       (url-retrieve server-url
+                                     'xml-new-rpc-request-callback-handler cbargs))
                    (let ((buffer (url-retrieve-synchronously server-url)))
                      (with-current-buffer buffer
                        (when (not (numberp url-http-response-status))
@@ -692,6 +694,12 @@ handled from XML-BUFFER."
     (when (< xml-rpc-debug 1)
       (kill-buffer xml-buffer))
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
+
+
+(defun xml-new-rpc-request-callback-handler (status callback-fun)
+  "Handle a new style `url-retrieve' callback passing `STATUS' and `CALLBACK-FUN'."
+  (let ((xml-buffer (current-buffer)))
+    (xml-rpc-request-callback-handler callback-fun xml-buffer)))
 
 
 (defun xml-rpc-method-call-async (async-callback-func server-url method
