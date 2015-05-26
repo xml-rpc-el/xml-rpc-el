@@ -8,13 +8,13 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.9
+;; Version: 1.6.10
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2013-04-23 16:54:08 mah>
+;; Last Modified: <2015-05-26 12:01:14 mah>
 
-(defconst xml-rpc-version "1.6.9"
+(defconst xml-rpc-version "1.6.10"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
@@ -123,6 +123,8 @@
 
 
 ;;; History:
+
+;; 1.6.10  - Improve detection of structs with a patch from Jos'h Fuller.
 
 ;; 1.6.9   - Add support for the i8 type (64 bit integers)
 ;;         - Quote lambda with #' instead of ' to silence byte compiler
@@ -259,7 +261,8 @@ Set it higher to get some info in the *Messages* buffer"
            (setq result (and
                          (setq curval (car-safe vals))
                          (consp curval)
-                         (stringp (car-safe curval))))
+                         (stringp (car-safe curval))
+                         (not (listp (cdr curval)))))
            (setq vals (cdr-safe vals)))
          result)))
 
