@@ -11,8 +11,8 @@
 ;; Version: 1.6.10
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
-;; URL: http://launchpad.net/xml-rpc-el
-;; Last Modified: <2015-05-26 12:01:14 mah>
+;; URL: http://github.com/hexmode/xml-rpc-el
+;; Last Modified: <2015-05-27 13:24:53 mah>
 
 (defconst xml-rpc-version "1.6.10"
   "Current version of xml-rpc.el")
