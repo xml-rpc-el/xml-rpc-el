@@ -246,6 +246,10 @@ Set it higher to get some info in the *Messages* buffer"
 (defvar xml-rpc-fault-code nil
   "Contains the fault code if a fault is returned")
 
+(defvar xml-rpc-request-extra-headers nil
+  "A list of extra headers to send with the next request.
+Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
+
 ;;
 ;; Value type handling functions
 ;;
@@ -560,10 +564,12 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
               (url-request-coding-system xml-rpc-use-coding-system)
               (url-http-attempt-keepalives t)
-              (url-request-extra-headers (list
-                                          (cons "Connection" "close")
-                                          (cons "Content-Type"
-                                                "text/xml; charset=utf-8"))))
+              (url-request-extra-headers (append
+                                          (list
+                                           (cons "Connection" "close")
+                                           (cons "Content-Type"
+                                                 "text/xml; charset=utf-8"))
+                                          xml-rpc-request-extra-headers)))
           (when (> xml-rpc-debug 1)
             (print url-request-data (create-file-buffer "request-data")))
 
@@ -586,7 +592,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                      result)))
                 (t                      ; Post emacs20 w3-el
                  (if async-callback-function
-                     (url-retrieve server-url async-callback-function)
+                     (let ((cbargs (list async-callback-function)))
+                       (url-retrieve server-url
+                                     'xml-new-rpc-request-callback-handler cbargs))
                    (let ((buffer (url-retrieve-synchronously server-url)))
                      (with-current-buffer buffer
                        (when (not (numberp url-http-response-status))
@@ -686,6 +694,12 @@ handled from XML-BUFFER."
     (when (< xml-rpc-debug 1)
       (kill-buffer xml-buffer))
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
+
+
+(defun xml-new-rpc-request-callback-handler (status callback-fun)
+  "Handle a new style `url-retrieve' callback passing `STATUS' and `CALLBACK-FUN'."
+  (let ((xml-buffer (current-buffer)))
+    (xml-rpc-request-callback-handler callback-fun xml-buffer)))
 
 
 (defun xml-rpc-method-call-async (async-callback-func server-url method
