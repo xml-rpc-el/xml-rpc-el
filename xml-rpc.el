@@ -8,13 +8,13 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.10.1
+;; Version: 1.6.11
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://github.com/hexmode/xml-rpc-el
-;; Last Modified: <2015-05-28 22:42:02 mah>
+;; Last Modified: <2015-05-29 11:32:09 mah>
 
-(defconst xml-rpc-version "1.6.10.1"
+(defconst xml-rpc-version "1.6.11"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
@@ -124,6 +124,8 @@
 
 
 ;;; History:
+
+;; 1.6.11  - Add a way (xml-rpc-request-headers) for clients to add extra headers.
 
 ;; 1.6.10.1 - removed extra HTTP header "Connection: close" and re-enabled keep-alive
 ;;            to work with long-lived connections when large data is transmitted (LTC)
