@@ -252,6 +252,20 @@ Set it higher to get some info in the *Messages* buffer"
   "A list of extra headers to send with the next request.
 Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
 
+(defsubst xml-rpc-valuep (value)
+  "Return t if VALUE is any sort of xml-rpc structure.
+
+Return nil otherwise."
+  (or (xml-rpc-value-intp value)
+      (xml-rpc-value-doublep value)
+      (xml-rpc-value-stringp value)
+      (xml-rpc-value-structp value)
+      (xml-rpc-value-arrayp value)
+      (xml-rpc-value-vectorp value)
+      (xml-rpc-value-booleanp value)
+      (xml-rpc-value-datetimep value)
+      (xml-rpc-value-base64p value)))
+
 ;;
 ;; Value type handling functions
 ;;
@@ -281,7 +295,7 @@ Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
                          (setq curval (car-safe vals))
                          (consp curval)
                          (stringp (car-safe curval))
-                         (not (listp (cdr curval)))))
+                         (xml-rpc-valuep (cdr curval))))
            (setq vals (cdr-safe vals)))
          result)))
 
