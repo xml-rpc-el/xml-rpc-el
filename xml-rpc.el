@@ -574,10 +574,11 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                                         " encoding=\"UTF-8\"?>\n"
                                         (with-temp-buffer
                                           (xml-print xml)
-                                          (when xml-rpc-allow-unicode-string
-                                            (encode-coding-region
-                                             (point-min) (point-max) 'utf-8))
-                                          (buffer-string))
+                                          (if xml-rpc-allow-unicode-string
+                                              (encode-coding-string
+                                               (buffer-substring-no-properties
+                                                (point-min) (point-max)) 'utf-8)
+                                              (buffer-substring-no-properties (point-min) (point-max))))
                                         "\n"))
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
               (url-request-coding-system xml-rpc-use-coding-system)
