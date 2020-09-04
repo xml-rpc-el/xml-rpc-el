@@ -208,8 +208,6 @@
 (require 'xml)
 (require 'url-http)
 (require 'timezone)
-(eval-when-compile
-  (require 'cl))
 
 (defconst xml-rpc-maintainer-address "mah@everybody.org"
   "The address where bug reports should be sent.")
@@ -253,20 +251,6 @@ Set it higher to get some info in the *Messages* buffer"
 (defvar xml-rpc-request-extra-headers nil
   "A list of extra headers to send with the next request.
 Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
-
-(defsubst xml-rpc-valuep (value)
-  "Return t if VALUE is any sort of xml-rpc structure.
-
-Return nil otherwise."
-  (or (xml-rpc-value-intp value)
-      (xml-rpc-value-doublep value)
-      (xml-rpc-value-stringp value)
-      (xml-rpc-value-structp value)
-      (xml-rpc-value-arrayp value)
-      (xml-rpc-value-vectorp value)
-      (xml-rpc-value-booleanp value)
-      (xml-rpc-value-datetimep value)
-      (xml-rpc-value-base64p value)))
 
 ;;
 ;; Value type handling functions
@@ -356,6 +340,20 @@ implementation, you must put keyword :base64 before the
 sequence, or it will be confused for a list."
   (and (listp value)
        (eq (car value) :base64)))
+
+(defsubst xml-rpc-valuep (value)
+  "Return t if VALUE is any sort of xml-rpc structure.
+
+Return nil otherwise."
+  (or (xml-rpc-value-intp value)
+      (xml-rpc-value-doublep value)
+      (xml-rpc-value-stringp value)
+      (xml-rpc-value-structp value)
+      (xml-rpc-value-arrayp value)
+      (xml-rpc-value-vectorp value)
+      (xml-rpc-value-booleanp value)
+      (xml-rpc-value-datetimep value)
+      (xml-rpc-value-base64p value)))
 
 (defun xml-rpc-string-to-boolean (value)
   "Return t if VALUE is a boolean"
