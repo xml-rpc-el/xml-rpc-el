@@ -1,4 +1,4 @@
-;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC
+;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC  -*- lexical-binding:t -*-
 
 ;; Copyright (C) 2002-2010 Mark A. Hershberger
 ;; Copyright (C) 2001 CodeFactory AB.
@@ -317,21 +317,24 @@ a list that is not datetime, base64 or struct."
   "Return t if VALUE is a vector - used to pass in empty lists"
   (vectorp value))
 
+(defvar xml-rpc--date-parses-as nil)
+(defvar xml-rpc--tz-pd-defined-in nil)
+
 (defun xml-rpc-submit-bug-report ()
  "Submit a bug report on xml-rpc."
  (interactive)
  (require 'reporter)
- (let ((xml-rpc-tz-pd-defined-in
+ (let ((xml-rpc--tz-pd-defined-in
         (if (fboundp 'find-lisp-object-file-name)
             (find-lisp-object-file-name
              'timezone-parse-date (symbol-function 'timezone-parse-date))
           (symbol-file 'timezone-parse-date)))
-       (date-parses-as (timezone-parse-date "20091130T00:52:53")))
+       (xml-rpc--date-parses-as (timezone-parse-date "20091130T00:52:53")))
    (reporter-submit-bug-report
     xml-rpc-maintainer-address
     (concat "xml-rpc.el " xml-rpc-version)
-    (list 'xml-rpc-tz-pd-defined-in
-          'date-parses-as
+    (list 'xml-rpc--tz-pd-defined-in
+          'xml-rpc--date-parses-as
           'xml-rpc-load-hook
           'xml-rpc-use-coding-system
           'xml-rpc-allow-unicode-string
@@ -552,6 +555,11 @@ the parsed XML response is returned."
 ;; Method handling
 ;;
 
+(defvar url-current-callback-data)
+(defvar url-current-callback-func)
+(defvar url-http-response-status)
+(defvar url-request-coding-system)
+
 (defun xml-rpc-request (server-url xml &optional async-callback-function)
   "Perform http post request to SERVER-URL using XML.
 
@@ -562,9 +570,6 @@ a single argument being an xml.el style XML list.
 
 It returns an XML list containing the method response from the XML-RPC server,
 or nil if called with ASYNC-CALLBACK-FUNCTION."
-  (declare (special url-current-callback-data
-                    url-current-callback-func
-                    url-http-response-status))
   (unwind-protect
       (save-excursion
         (let ((url-request-method "POST")
@@ -715,7 +720,7 @@ handled from XML-BUFFER."
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
 
 
-(defun xml-new-rpc-request-callback-handler (status callback-fun)
+(defun xml-new-rpc-request-callback-handler (_status callback-fun)
   "Handle a new style `url-retrieve' callback passing `STATUS' and `CALLBACK-FUN'."
   (let ((xml-buffer (current-buffer)))
     (xml-rpc-request-callback-handler callback-fun xml-buffer)))
