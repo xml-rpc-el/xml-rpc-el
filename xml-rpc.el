@@ -8,13 +8,13 @@
 
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.12
+;; Version: 1.6.13
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://github.com/hexmode/xml-rpc-el
 ;; Last Modified: <2016-04-30 17:56:41 mah>
 
-(defconst xml-rpc-version "1.6.12"
+(defconst xml-rpc-version "1.6.13"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
@@ -124,6 +124,8 @@
 
 
 ;;; History:
+
+;; 1.6.13  - Fix running on Emacs 25 or later
 
 ;; 1.6.12  - Add tests (thanks mdorman!), fix struct detection
 
