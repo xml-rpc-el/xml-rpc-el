@@ -244,6 +244,13 @@ utf-8 coding system."
 Set it higher to get some info in the *Messages* buffer"
   :type 'integer :group 'xml-rpc)
 
+(defvar xml-rpc-parse-region-function
+  (if (and (fboundp 'libxml-available-p)
+           (libxml-available-p))
+      #'libxml-parse-xml-region
+    #'xml-parse-region)
+  "Function to use for parsing XML data.")
+
 (defvar xml-rpc-fault-string nil
   "Contains the fault string if a fault is returned")
 
@@ -687,9 +694,11 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                            url-http-response-status 200))
                (result (cond
                         ;; A probable XML response
-                        ((looking-at "<\\?xml ")
-                         (xml-rpc-clean (xml-parse-region (point-min)
-                                                          (point-max))))
+                        ((search-forward "<?xml " nil t)
+                         (xml-rpc-clean
+                          (funcall xml-rpc-parse-region-function
+                                   (match-beginning 0)
+                                   (point-max))))
 
                         ;; No HTTP status returned
                         ((not status)
@@ -700,15 +709,22 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
 
                         ;; Maybe they just gave us an the XML w/o PI?
                         ((search-forward "<methodResponse>" nil t)
-                         (xml-rpc-clean (xml-parse-region (match-beginning 0)
-                                                          (point-max))))
+                         (xml-rpc-clean
+                          (funcall xml-rpc-parse-region-function
+                                   (match-beginning 0)
+                                   (point-max))))
 
                         ;; Valid HTTP status
                         (t
                          (int-to-string status)))))
           (when (< xml-rpc-debug 3)
             (kill-buffer (current-buffer)))
-          result))))
+          ;; Normalize result: `libxml-parse-xml-region' gives response like
+          ;; `(methodResponse ...)' but `xml-parse-region' gives
+          ;; `((methodResponse ...))'.
+          (if (eq xml-rpc-parse-region-function 'libxml-parse-xml-region)
+              (list result)
+            result)))))
 
 
 (defun xml-rpc-request-callback-handler (callback-fun xml-buffer)
