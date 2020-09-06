@@ -50,7 +50,8 @@ Content-Length: 152
                        xml-rpc-test-result))))))
 
 (ert-deftest test-xml-rpc-request-process-buffer/libxml ()
-  (skip-unless (fboundp 'libxml-available-p))
+  (skip-unless (and (fboundp 'libxml-available-p)
+                    (libxml-available-p)))
   (let ((xml-rpc-parse-region-function #'libxml-parse-xml-region))
     (dolist (data (list xml-rpc-test-http-data
                         xml-rpc-test-scgi-data))
