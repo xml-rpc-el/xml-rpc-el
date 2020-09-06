@@ -12,9 +12,9 @@
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://github.com/hexmode/xml-rpc-el
-;; Last Modified: <2016-04-30 17:56:41 mah>
+;; Last Modified: <2020-09-06 15:33:28 mah>
 
-(defconst xml-rpc-version "1.6.13"
+(defconst xml-rpc-version "1.6.14"
   "Current version of xml-rpc.el")
 
 ;; This file is NOT (yet) part of GNU Emacs.
