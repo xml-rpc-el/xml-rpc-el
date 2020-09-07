@@ -1,5 +1,5 @@
-* Commentary:
 [[https://melpa.org/#/xml-rpc][file:https://melpa.org/packages/xml-rpc-badge.svg]]
+* Commentary:
 
 This is an [[http://xmlrpc.com/][XML-RPC]] client implementation in elisp, capable of both synchronous and asynchronous method calls (using the url package's async retrieval functionality).
 
@@ -79,114 +79,21 @@ These were last tested working on 2020-09-06.
                        'examples.getStateName '(1))
 #+end_src
 
-#+RESULTS:
-: Alabama
+Results in:
+
+#+begin_example
+Alabama
+#+end_example
+
 *** Get a list of supported methods from a blog
 #+begin_src elisp
   (mapconcat (lambda (s) (when s s))
     (xml-rpc-method-call "https://hexmode.wordpress.com/xmlrpc.php"
                          'mt.supportedMethods)
-    "\n")
+    ", ")
 #+end_src
 
-#+RESULTS:
+Results in:
 #+begin_example
-wp.getUsersBlogs
-wp.newPost
-wp.editPost
-wp.deletePost
-wp.getPost
-wp.getPosts
-wp.newTerm
-wp.editTerm
-wp.deleteTerm
-wp.getTerm
-wp.getTerms
-wp.getTaxonomy
-wp.getTaxonomies
-wp.getUser
-wp.getUsers
-wp.getProfile
-wp.editProfile
-wp.getPage
-wp.getPages
-wp.newPage
-wp.deletePage
-wp.editPage
-wp.getPageList
-wp.getAuthors
-wp.getCategories
-wp.getTags
-wp.newCategory
-wp.deleteCategory
-wp.suggestCategories
-wp.uploadFile
-wp.deleteFile
-wp.getCommentCount
-wp.getPostStatusList
-wp.getPageStatusList
-wp.getPageTemplates
-wp.getOptions
-wp.setOptions
-wp.getComment
-wp.getComments
-wp.deleteComment
-wp.editComment
-wp.newComment
-wp.getCommentStatusList
-wp.getMediaItem
-wp.getMediaLibrary
-wp.getPostFormats
-wp.getPostType
-wp.getPostTypes
-wp.getRevisions
-wp.restoreRevision
-blogger.getUsersBlogs
-blogger.getUserInfo
-blogger.getPost
-blogger.getRecentPosts
-blogger.newPost
-blogger.editPost
-blogger.deletePost
-metaWeblog.newPost
-metaWeblog.editPost
-metaWeblog.getPost
-metaWeblog.getRecentPosts
-metaWeblog.getCategories
-metaWeblog.newMediaObject
-metaWeblog.deletePost
-metaWeblog.getUsersBlogs
-mt.getCategoryList
-mt.getRecentPostTitles
-mt.getPostCategories
-mt.setPostCategories
-mt.supportedMethods
-mt.supportedTextFilters
-mt.getTrackbackPings
-mt.publishPost
-pingback.ping
-pingback.extensions.getPingbacks
-demo.sayHello
-demo.addTwoNumbers
-wpStats.get_key
-wpStats.check_key
-wpStats.get_blog_id
-wpStats.get_site_id
-wpStats.update_bloginfo
-wpStats.update_postinfo
-wpStats.ping_blog
-wpStats.flush_posts
-wpcom.get_user_blogids
-wpcom.getFeatures
-wpcom.addApplicationPassword
-wpcom.blackberryUploadFile
-wpcom.blackberryGetUploadingFileKeys
-wpcom.getUsersSubs
-wpcom.set_mobile_push_notification_settings
-wpcom.get_mobile_push_notification_settings
-wpcom.mobile_push_register_token
-wpcom.mobile_push_unregister_token
-wpcom.mobile_push_set_blogs_list
-wpcom.mobile_push_win_phone_get_last_notification
+wp.getUsersBlogs, wp.newPost, wp.editPost, wp.deletePost, wp.getPost, wp.getPosts, wp.newTerm, wp.editTerm, wp.deleteTerm, wp.getTerm, wp.getTerms, wp.getTaxonomy, wp.getTaxonomies, wp.getUser, wp.getUsers, wp.getProfile, wp.editProfile, wp.getPage, wp.getPages, wp.newPage, wp.deletePage, wp.editPage, wp.getPageList, wp.getAuthors, wp.getCategories, wp.getTags, wp.newCategory, wp.deleteCategory, wp.suggestCategories, wp.uploadFile, wp.deleteFile, wp.getCommentCount, wp.getPostStatusList, wp.getPageStatusList, wp.getPageTemplates, wp.getOptions, wp.setOptions, wp.getComment, wp.getComments, wp.deleteComment, wp.editComment, wp.newComment, wp.getCommentStatusList, wp.getMediaItem, wp.getMediaLibrary, wp.getPostFormats, wp.getPostType, wp.getPostTypes, wp.getRevisions, wp.restoreRevision, blogger.getUsersBlogs, blogger.getUserInfo, blogger.getPost, blogger.getRecentPosts, blogger.newPost, blogger.editPost, blogger.deletePost, metaWeblog.newPost, metaWeblog.editPost, metaWeblog.getPost, metaWeblog.getRecentPosts, metaWeblog.getCategories, metaWeblog.newMediaObject, metaWeblog.deletePost, metaWeblog.getUsersBlogs, mt.getCategoryList, mt.getRecentPostTitles, mt.getPostCategories, mt.setPostCategories, mt.supportedMethods, mt.supportedTextFilters, mt.getTrackbackPings, mt.publishPost, pingback.ping, pingback.extensions.getPingbacks, demo.sayHello, demo.addTwoNumbers, wpStats.get_key, wpStats.check_key, wpStats.get_blog_id, wpStats.get_site_id, wpStats.update_bloginfo, wpStats.update_postinfo, wpStats.ping_blog, wpStats.flush_posts, wpcom.get_user_blogids, wpcom.getFeatures, wpcom.addApplicationPassword, wpcom.blackberryUploadFile, wpcom.blackberryGetUploadingFileKeys, wpcom.getUsersSubs, wpcom.set_mobile_push_notification_settings, wpcom.get_mobile_push_notification_settings, wpcom.mobile_push_register_token, wpcom.mobile_push_unregister_token, wpcom.mobile_push_set_blogs_list, wpcom.mobile_push_win_phone_get_last_notification
 #+end_example
-
