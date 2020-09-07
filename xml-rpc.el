@@ -11,8 +11,8 @@
 ;; Version: 1.6.15
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
-;; URL: http://github.com/hexmode/xml-rpc-el
-;; Last Modified: <2020-09-06 18:40:07 mah>
+;; URL: http://github.com/xml-rpc-el/xml-rpc-el
+;; Last Modified: <2020-09-06 20:07:23 mah>
 
 (defconst xml-rpc-version "1.6.15"
   "Current version of xml-rpc.el")
