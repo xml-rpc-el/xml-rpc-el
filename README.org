@@ -1,4 +1,8 @@
-[[https://stable.melpa.org/#/xml-rpc][file:https://stable.melpa.org/packages/xml-rpc-badge.svg]] [[https://melpa.org/#/xml-rpc][file:https://melpa.org/packages/xml-rpc-badge.svg]] [[https://github.com/xml-rpc-el/xml-rpc-el/actions][https://github.com/xml-rpc-el/xml-rpc-el/workflows/CI/badge.svg]]
+[[http://github.com/xml-rpc-el/xml-rpc-el][https://elpa.nongnu.org/nongnu/xml-rpc.svg]]
+[[https://stable.melpa.org/#/xml-rpc][file:https://stable.melpa.org/packages/xml-rpc-badge.svg]]
+[[https://melpa.org/#/xml-rpc][file:https://melpa.org/packages/xml-rpc-badge.svg]]
+[[https://github.com/xml-rpc-el/xml-rpc-el/actions][https://github.com/xml-rpc-el/xml-rpc-el/workflows/CI/badge.svg]]
+
 * Commentary:
 
 This is an [[http://xmlrpc.com/][XML-RPC]] client implementation in elisp, capable of both synchronous and asynchronous method calls (using the url package's async retrieval functionality).
