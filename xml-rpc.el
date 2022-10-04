@@ -8,14 +8,14 @@
 
 ;; Maintainer: Mark A. Hershberger <mah@everybody.org>
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
-;; Version: 1.6.15
+;; Version: 1.6.16
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://github.com/xml-rpc-el/xml-rpc-el
-;; Last Modified: <2022-10-04 18:13:55 skangas>
+;; Last Modified: <2022-10-04 18:14:42 skangas>
 
-(defconst xml-rpc-version "1.6.15"
-  "Current version of xml-rpc.el")
+(defconst xml-rpc-version "1.6.16"
+  "Current version of xml-rpc.el.")
 
 ;; This file is NOT (yet) part of GNU Emacs.
 
