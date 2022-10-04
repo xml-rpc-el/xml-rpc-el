@@ -12,7 +12,7 @@
 ;; Created: May 13 2001
 ;; Keywords: xml rpc network
 ;; URL: http://github.com/xml-rpc-el/xml-rpc-el
-;; Last Modified: <2020-09-06 20:07:23 mah>
+;; Last Modified: <2022-10-04 18:13:55 skangas>
 
 (defconst xml-rpc-version "1.6.15"
   "Current version of xml-rpc.el")
@@ -51,7 +51,7 @@
   :type 'symbol :group 'xml-rpc)
 
 (defcustom xml-rpc-allow-unicode-string (coding-system-p 'utf-8)
-  "If non-nil, non-ASCII data is composed as 'value' instead of 'base64'.
+  "If non-nil, non-ASCII data is composed as `value' instead of `base64'.
 And this option overrides `xml-rpc-base64-encode-unicode' and
 `xml-rpc-base64-decode-unicode' if set as non-nil."
   :type 'boolean :group 'xml-rpc)
@@ -200,7 +200,7 @@ Return nil otherwise."
   (or (string-equal value "true") (string-equal value "1")))
 
 (defun xml-rpc-caddar-safe (list)
-  "Assume that LIST is '((value nil REST)) and return REST.  If
+  "Assume that LIST is \\='((value nil REST)) and return REST.  If
 REST is nil, then return \"\""
   (let ((rest (car-safe (cdr-safe (cdr-safe (car-safe list))))))
     (if rest
@@ -355,9 +355,9 @@ functions in xml.el."
 ;;
 
 (defsubst xml-rpc-response-errorp (response)
-  "An 'xml-rpc-method-call'  result value is always a list, where the first
+  "An `xml-rpc-method-call' result value is always a list, where the first
 element in RESPONSE is either nil or if an error occured, a cons pair
-according to (errnum .  \"Error string\"),"
+according to (errnum . \"Error string\")."
   (eq 'fault (car-safe (caddar response))))
 
 (defsubst xml-rpc-response-error-code (response)
@@ -422,8 +422,9 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                        (with-temp-buffer
                          (xml-print xml)
                          (if xml-rpc-allow-unicode-string
-                             (string-as-unibyte
-			      (encode-coding-string (buffer-string) 'utf-8))
+                             (encode-coding-string
+                              (encode-coding-string (buffer-string) 'utf-8)
+                              'raw-text t)
                            (buffer-string)))
                        "\n"))
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
