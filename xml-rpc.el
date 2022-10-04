@@ -10,7 +10,8 @@
 ;; Original Author: Daniel Lundin <daniel@codefactory.se>
 ;; Version: 1.6.15
 ;; Created: May 13 2001
-;; Keywords: xml rpc network
+;; Keywords: xml rpc network comm
+;; Package-Requires: ((emacs "24.1"))
 ;; URL: http://github.com/xml-rpc-el/xml-rpc-el
 ;; Last Modified: <2020-09-06 20:07:23 mah>
 
@@ -31,6 +32,8 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
 
 ;;; Code:
 
@@ -459,7 +462,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                  (if async-callback-function
                      (let ((cbargs (list async-callback-function)))
                        (url-retrieve server-url
-                                     'xml-new-rpc-request-callback-handler
+                                     'xml-rpc-new-request-callback-handler
                                      cbargs))
                    (let ((buffer (url-retrieve-synchronously server-url)))
                      (with-current-buffer buffer
@@ -571,7 +574,7 @@ handled from XML-BUFFER."
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
 
 
-(defun xml-new-rpc-request-callback-handler (_status callback-fun)
+(defun xml-rpc-new-request-callback-handler (_status callback-fun)
   "Handle a new style `url-retrieve' callback passing `STATUS'
 and `CALLBACK-FUN'."
   (let ((xml-buffer (current-buffer)))
@@ -607,6 +610,10 @@ parameters."
            (list (cons nil (concat "URL/HTTP Error: " response))))
           (t
            (xml-rpc-xml-to-response response)))))
+
+;; This can be removed later:
+(define-obsolete-function-alias 'xml-new-rpc-request-callback-handler
+  #'xml-rpc-new-request-callback-handler "XML-RPC 1.6.15")
 
 (provide 'xml-rpc)
 
