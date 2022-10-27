@@ -1,4 +1,4 @@
-[[http://github.com/xml-rpc-el/xml-rpc-el][https://elpa.nongnu.org/nongnu/xml-rpc.svg]]
+[[https://elpa.nongnu.org/nongnu/xml-rpc.html][https://elpa.nongnu.org/nongnu/xml-rpc.svg]]
 [[https://stable.melpa.org/#/xml-rpc][file:https://stable.melpa.org/packages/xml-rpc-badge.svg]]
 [[https://melpa.org/#/xml-rpc][file:https://melpa.org/packages/xml-rpc-badge.svg]]
 [[https://github.com/xml-rpc-el/xml-rpc-el/actions][https://github.com/xml-rpc-el/xml-rpc-el/workflows/CI/badge.svg]]
@@ -13,9 +13,9 @@ xml-rpc.el represents XML-RPC datatypes as lisp values, automatically converting
 
 * Installation:
 
-If you use [[http://elpa.gnu.org/][ELPA]], and have configured the [[https://melpa.org/][MELPA]] repository, then =M-x package-install RET xml-rpc RET= interface. This is preferrable as you will have access to updates automatically.
+If you use [[http://elpa.gnu.org/][ELPA]], and have configured the [[https://elpa.nongnu.org/][NonGNU ELPA]] or [[https://melpa.org/][MELPA]] repository, then =M-x package-install RET xml-rpc RET= interface. This is preferrable as you will have access to updates automatically.
 
-If you would like to use ELPA, but this is your first time to use it or MELPA, then try evaluating the following code in emacs:
+If you would like to use ELPA, but this is your first time to use it, or NonGNU ELPA/MELPA, then try evaluating the following code in emacs:
 #+begin_src elisp
   (progn
     (require 'package)
