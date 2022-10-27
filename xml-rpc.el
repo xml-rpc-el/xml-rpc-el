@@ -39,7 +39,6 @@
 
 (require 'xml)
 (require 'url-http)
-(require 'timezone)
 
 (defconst xml-rpc-maintainer-address "mah@everybody.org"
   "The address where bug reports should be sent.")
@@ -143,6 +142,8 @@ a list that is not datetime, base64 or struct."
 
 (defvar xml-rpc--date-parses-as nil)
 (defvar xml-rpc--tz-pd-defined-in nil)
+
+(autoload 'timezone-parse-date "timezone")
 
 (defun xml-rpc-submit-bug-report ()
  "Submit a bug report on xml-rpc."
