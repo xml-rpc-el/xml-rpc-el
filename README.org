@@ -13,7 +13,7 @@ xml-rpc.el represents XML-RPC datatypes as lisp values, automatically converting
 
 * Installation:
 
-If you use [[http://elpa.gnu.org/][ELPA]], and have configured the [[https://elpa.nongnu.org/][NonGNU ELPA]] or [[https://melpa.org/][MELPA]] repository, then =M-x package-install RET xml-rpc RET= interface. This is preferrable as you will have access to updates automatically.
+If you use [[http://elpa.gnu.org/][ELPA]], and have configured the [[https://elpa.nongnu.org/][NonGNU ELPA]] or [[https://melpa.org/][MELPA]] repository, then =M-x package-install RET xml-rpc RET= interface. This is preferable as you will have access to updates automatically.
 
 If you would like to use ELPA, but this is your first time to use it, or NonGNU ELPA/MELPA, then try evaluating the following code in emacs:
 #+begin_src elisp

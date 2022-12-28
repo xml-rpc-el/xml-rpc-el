@@ -360,7 +360,7 @@ functions in xml.el."
 
 (defsubst xml-rpc-response-errorp (response)
   "An `xml-rpc-method-call' result value is always a list, where the first
-element in RESPONSE is either nil or if an error occured, a cons pair
+element in RESPONSE is either nil or if an error occurred, a cons pair
 according to (errnum . \"Error string\")."
   (eq 'fault (car-safe (caddar response))))
 
@@ -410,7 +410,7 @@ the parsed XML response is returned."
 
 If ASYNC-CALLBACK-FUNCTION is non-nil, the request will be performed
 asynchronously and ASYNC-CALLBACK-FUNCTION should be a callback function to
-be called when the reuest is finished.  ASYNC-CALLBACK-FUNCTION is called with
+be called when the request is finished.  ASYNC-CALLBACK-FUNCTION is called with
 a single argument being an xml.el style XML list.
 
 It returns an XML list containing the method response from the XML-RPC server,
@@ -508,7 +508,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
          ((listp elem)
           (setq result (append result (list (xml-rpc-clean elem)))))
 
-         ;; everthing else, as is.
+         ;; everything else, as is.
          (t
           (setq result (append result (list elem))))))
       result))
