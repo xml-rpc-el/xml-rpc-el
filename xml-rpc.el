@@ -185,7 +185,7 @@ sequence, or it will be confused for a list."
   (and (listp value)
        (eq (car value) :base64)))
 
-(defsubst xml-rpc-valuep (value)
+(defun xml-rpc-valuep (value)
   "Return t if VALUE is any sort of xml-rpc structure.
 
 Return nil otherwise."
