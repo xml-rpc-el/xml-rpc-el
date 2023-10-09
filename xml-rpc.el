@@ -59,13 +59,11 @@ And this option overrides `xml-rpc-base64-encode-unicode' and
   :type 'boolean :group 'xml-rpc)
 
 (defcustom xml-rpc-base64-encode-unicode (coding-system-p 'utf-8)
-  "If non-nil, then strings with non-ascii characters will be turned
-into Base64."
+  "If non-nil, convert strings with non-ASCII characters into Base64."
   :type 'boolean :group 'xml-rpc)
 
 (defcustom xml-rpc-base64-decode-unicode (coding-system-p 'utf-8)
-  "If non-nil, then base64 strings will be decoded using the
-utf-8 coding system."
+  "If non-nil, decode base64 strings using the UTF-8 coding system."
   :type 'boolean :group 'xml-rpc)
 
 (defcustom xml-rpc-debug 0
@@ -81,10 +79,10 @@ Set it higher to get some info in the *Messages* buffer"
   "Function to use for parsing XML data.")
 
 (defvar xml-rpc-fault-string nil
-  "Contains the fault string if a fault is returned")
+  "Contains the fault string if a fault is returned.")
 
 (defvar xml-rpc-fault-code nil
-  "Contains the fault code if a fault is returned")
+  "Contains the fault code if a fault is returned.")
 
 (defvar xml-rpc-request-extra-headers nil
   "A list of extra headers to send with the next request.
@@ -126,8 +124,9 @@ Should be an assoc list of headers/contents.  See
 
 ;; A somewhat lazy predicate for arrays
 (defsubst xml-rpc-value-arrayp (value)
-  "Return t if VALUE is an XML-RPC array - specified by keyword :array or
-a list that is not datetime, base64 or struct."
+  "Return t if VALUE is an XML-RPC array.
+This is specified by keyword :array or a list that is not
+datetime, base64 or struct."
   (and (listp value)
        (or
 	(eq (car value) :array)
@@ -137,7 +136,7 @@ a list that is not datetime, base64 or struct."
 	 (not (xml-rpc-value-structp value))))))
 
 (defsubst xml-rpc-value-vectorp (value)
-  "Return t if VALUE is a vector - used to pass in empty lists"
+  "Return t if VALUE is a vector - used to pass in empty lists."
   (vectorp value))
 
 (defvar xml-rpc--date-parses-as nil)
@@ -172,16 +171,16 @@ a list that is not datetime, base64 or struct."
       (eq value t)))
 
 (defun xml-rpc-value-datetimep (value)
-  "Return t if VALUE is a datetime.  For Emacs XML-RPC
-implementation, you must put time keyword :datetime before the
-time, or it will be confused for a list."
+  "Return t if VALUE is a datetime.
+For Emacs XML-RPC implementation, you must put time keyword
+:datetime before the time, or it will be confused for a list."
   (and (listp value)
        (eq (car value) :datetime)))
 
 (defun xml-rpc-value-base64p (value)
-  "Return t if VALUE is a base64 byte array.  For Emacs XML-RPC
-implementation, you must put keyword :base64 before the
-sequence, or it will be confused for a list."
+  "Return t if VALUE is a base64 byte array.
+For Emacs XML-RPC implementation, you must put keyword :base64
+before the sequence, or it will be confused for a list."
   (and (listp value)
        (eq (car value) :base64)))
 
@@ -200,20 +199,20 @@ Return nil otherwise."
       (xml-rpc-value-base64p value)))
 
 (defun xml-rpc-string-to-boolean (value)
-  "Return t if VALUE is a boolean"
+  "Return t if VALUE is a boolean."
   (or (string-equal value "true") (string-equal value "1")))
 
 (defun xml-rpc-caddar-safe (list)
-  "Assume that LIST is \\='((value nil REST)) and return REST.  If
-REST is nil, then return \"\""
+  "Assume that LIST is \\='((value nil REST)) and return REST.
+If REST is nil, then return \"\"."
   (let ((rest (car-safe (cdr-safe (cdr-safe (car-safe list))))))
     (if rest
 	rest
       "")))
 
 (defun xml-rpc-xml-list-to-value (xml-list)
-  "Convert an XML-RPC structure in an xml.el style XML-LIST to an elisp list,
-interpreting and simplifying it while retaining its structure."
+  "Convert an XML-RPC structure in an xml.el style XML-LIST to an elisp list.
+Interpret and simplify it while retaining its structure."
   (let (valtype valvalue)
     (cond
      ((and (xml-rpc-caddar-safe xml-list)
@@ -265,18 +264,17 @@ interpreting and simplifying it while retaining its structure."
       (xml-rpc-caddar-safe xml-list)))))
 
 (defun xml-rpc-boolean-to-string (value)
-  "Convert a boolean value to a string"
+  "Convert a boolean VALUE to a string."
   (if value
       "1"
     "0"))
 
 (defun xml-rpc-datetime-to-string (value)
-  "Convert a date time to a valid XML-RPC date"
+  "Convert a date time VALUE to a valid XML-RPC date."
   (format-time-string "%Y%m%dT%H:%M:%S" (cadr value)))
 
 (defun xml-rpc-value-to-xml-list (value)
-  "Return XML representation of VALUE properly formatted for use with the
-functions in xml.el."
+  "Return XML representation of VALUE formatted for use with xml.el."
   (cond
    ;; boolean
    ((xml-rpc-value-booleanp value)
@@ -375,10 +373,10 @@ according to (errnum . \"Error string\")."
        (nth 2 (xml-rpc-xml-list-to-value response))))
 
 (defun xml-rpc-xml-to-response (xml)
-  "Convert an XML list to a method response list.  An error is
-signaled if there is a fault or if the response does not appear
-to be an XML-RPC response (i.e. no methodResponse).  Otherwise,
-the parsed XML response is returned."
+  "Convert an XML list to a method response list.
+Signal an error if there is a fault or if the response does not
+appear to be an XML-RPC response (i.e. no methodResponse).
+Otherwise, return the parsed XML response."
   ;; Check if we have a methodResponse
   (cond
    ((not (eq (car-safe (car-safe xml)) 'methodResponse))
@@ -577,8 +575,8 @@ handled from XML-BUFFER."
 
 
 (defun xml-rpc-new-request-callback-handler (_status callback-fun)
-  "Handle a new style `url-retrieve' callback passing `STATUS'
-and `CALLBACK-FUN'."
+  "Handle a new style `url-retrieve' callback passing STATUS
+and CALLBACK-FUN."
   (let ((xml-buffer (current-buffer)))
     (xml-rpc-request-callback-handler callback-fun xml-buffer)))
 
@@ -586,7 +584,7 @@ and `CALLBACK-FUN'."
 (defun xml-rpc-method-call-async (async-callback-func server-url method
                                                       &rest params)
   "Call an XML-RPC method asynchronously at SERVER-URL named METHOD with
-PARAMS as parameters. When the method returns, ASYNC-CALLBACK-FUNC will be
+PARAMS as parameters.  When the method returns, ASYNC-CALLBACK-FUNC will be
 called with the result as parameter."
   (let* ((m-name (if (stringp method)
                      method
@@ -604,8 +602,7 @@ called with the result as parameter."
     (xml-rpc-request server-url m-func-call async-callback-func)))
 
 (defun xml-rpc-method-call (server-url method &rest params)
-  "Call an XML-RPC method at SERVER-URL named METHOD with PARAMS as
-parameters."
+  "Call an XML-RPC method at SERVER-URL named METHOD with PARAMS as parameters."
   (let ((response
          (xml-rpc-method-call-async nil server-url method params)))
     (cond ((stringp response)
