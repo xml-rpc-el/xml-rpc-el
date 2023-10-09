@@ -1,5 +1,5 @@
 name: CI
-
+permissions: {}
 on:
   pull_request:
   push:
@@ -27,10 +27,15 @@ jobs:
           - 29.1
           - snapshot
     steps:
-    - uses: purcell/setup-emacs@master
+    - name: Install Emacs
+      uses: purcell/setup-emacs@master
       with:
         version: ${{ matrix.emacs_version }}
 
-    - uses: actions/checkout@v2
+    - name: Checkout xml-rpc-el
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
     - name: Run tests
       run: 'make test'
