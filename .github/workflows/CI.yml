@@ -33,7 +33,7 @@ jobs:
         version: ${{ matrix.emacs_version }}
 
     - name: Checkout xml-rpc-el
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         persist-credentials: false
 
